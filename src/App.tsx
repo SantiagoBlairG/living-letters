@@ -364,9 +364,8 @@ export function App() {
           aria-label={`Colour: ${settings.palette === 'custom' ? 'Custom' : palette.name}`} title="Colour"
           onClick={() => { setQuickOpen(false); setColorOpen((o) => !o); }}
         >
-          <span className="swatch" style={{ background: palette.bg2 && palette.bg2 !== palette.bg ? `linear-gradient(135deg, ${palette.bg}, ${palette.bg2})` : palette.bg }}>
-            <i style={{ background: palette.ink }} /><i style={{ background: palette.flower }} /><i style={{ background: palette.spark }} />
-          </span>
+          <i style={{ background: palette.bg2 && palette.bg2 !== palette.bg ? `linear-gradient(135deg, ${palette.bg}, ${palette.bg2})` : palette.bg }} />
+          <i style={{ background: palette.ink }} /><i style={{ background: palette.flower }} /><i style={{ background: palette.spark }} />
         </button>
       </div>
       {quickOpen && <QuickControls settings={settings} onChange={patch} onClose={() => setQuickOpen(false)} />}

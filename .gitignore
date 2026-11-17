@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-single/
+.vercel/
+.env
+.env.*
+*.log
+.DS_Store
+Thumbs.db
+
+# archivo original exportado desde Claude chat
+living-letters-source.zip

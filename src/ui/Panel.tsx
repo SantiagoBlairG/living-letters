@@ -1,0 +1,133 @@
+import { MATERIALS, MAX_CHARS, PALETTES, SUGGESTIONS } from '../engine/config';
+import type { MaterialId, Settings } from '../engine/types';
+import { cleanWord } from '../App';
+
+interface Props {
+  open: boolean;
+  narrow: boolean;
+  settings: Settings;
+  onChange(p: Partial<Settings>): void;
+  onToggle(): void;
+  onReset(): void;
+  onSurprise(): void;
+}
+
+/** Small drawings of each material's cursor, so the picker previews the tool. */
+function Glyph({ id }: { id: MaterialId }) {
+  return (
+    <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" fill="none" strokeWidth="1.7" strokeLinecap="round">
+      {id === 'jelly' && (<><ellipse cx="16" cy="17" rx="11" ry="9" stroke="currentColor" /><circle cx="14" cy="16" r="2.8" fill="currentColor" /></>)}
+      {id === 'magnet' && (<><path d="M6 13a11 11 0 0 1 14-7.5M26 19a11 11 0 0 1-14 7.5" stroke="currentColor" /><circle cx="16" cy="16" r="3.4" fill="currentColor" /></>)}
+      {id === 'bloom' && (<><path d="M16 9c4 3 4 10 0 14c-4-4-4-11 0-14Z" fill="currentColor" /><path d="M14 22C9 22 6 19 5 15c5 0 8 3 9 7ZM18 22c5 0 8-3 9-7c-5 0-8 3-9 7Z" fill="currentColor" opacity=".55" /></>)}
+      {id === 'float' && (<><circle cx="21" cy="11" r="3.4" fill="currentColor" /><path d="M17 15C12 19 8 21 4 26M19 18c-3 3-5 5-7 8" stroke="currentColor" opacity=".7" /></>)}
+    </svg>
+  );
+}
+
+const ACCENT: Record<MaterialId, string> = { jelly: '#DFFF70', magnet: '#7C8BFF', bloom: '#FF6A52', float: '#F3F0E8' };
+
+export function Panel({ open, narrow, settings, onChange, onToggle, onReset, onSurprise }: Props) {
+  const count = Array.from(settings.word).length;
+  return (
+    <>
+      <aside id="panel" className="panel" data-open={open} aria-label="Controls">
+        <button type="button" className="handle" onClick={onToggle} aria-expanded={open}>
+          <span className="grip" aria-hidden="true" />
+          <span>{open ? 'Close controls' : 'Controls'}</span>
+          <span className="handle-now">{MATERIALS.find((m) => m.id === settings.material)!.label}</span>
+        </button>
+
+        <div className="panel-body" inert={!open}>
+          <div className="row head only-wide">
+            <span>Controls</span>
+            <button type="button" className="text-btn" onClick={onToggle}>Hide <kbd>H</kbd></button>
+          </div>
+
+          <section>
+            <div className="row">
+              <label htmlFor="word">Your word</label>
+              <span className="dim" aria-hidden="true">{count}/{MAX_CHARS}</span>
+            </div>
+            <input
+              id="word" className="word-input" value={settings.word} placeholder="Type a word"
+              maxLength={MAX_CHARS * 2} autoComplete="off" autoCapitalize="off" spellCheck={false} enterKeyHint="done"
+              onChange={(e) => onChange({ word: cleanWord(e.target.value) })}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur(); }}
+            />
+            <div className="suggest" role="group" aria-label="Suggestions">
+              {SUGGESTIONS.map((w) => (
+                <button key={w} type="button" aria-pressed={settings.word === w} onClick={() => onChange({ word: w })}>{w}</button>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <div className="row"><span id="mat-label">Material</span></div>
+            <div className="materials" role="radiogroup" aria-labelledby="mat-label">
+              {MATERIALS.map((m, i) => (
+                <button
+                  key={m.id} type="button" role="radio" aria-checked={settings.material === m.id}
+                  style={{ ['--a' as string]: ACCENT[m.id] }}
+                  onClick={() => onChange({ material: m.id })}
+                >
+                  <Glyph id={m.id} />
+                  <span className="m-name">{m.label}</span>
+                  <span className="m-note">{m.note}</span>
+                  <kbd className="only-wide">{i + 1}</kbd>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="sliders">
+            <Slider id="intensity" label="Intensity" hint="How hard the letters react" value={settings.intensity} onChange={(v) => onChange({ intensity: v })} />
+            <Slider id="motion" label="Motion" hint="How alive they are at rest" value={settings.motion} onChange={(v) => onChange({ motion: v })} />
+          </section>
+
+          <section>
+            <div className="row"><span id="col-label">Color</span><span className="dim">{PALETTES.find((p) => p.id === settings.palette)?.name}</span></div>
+            <div className="palettes" role="radiogroup" aria-labelledby="col-label">
+              {PALETTES.map((p) => (
+                <button
+                  key={p.id} type="button" role="radio" aria-checked={settings.palette === p.id} aria-label={p.name} title={p.name}
+                  style={{ background: p.bg, color: p.ink }} onClick={() => onChange({ palette: p.id })}
+                >
+                  <span className="p-a" aria-hidden="true">a</span>
+                  <i style={{ background: p.stem }} /><i style={{ background: p.flower }} /><i style={{ background: p.spark }} />
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="actions">
+            <button type="button" className="btn" onClick={onReset}>Reset scene</button>
+            <button type="button" className="btn primary" onClick={onSurprise}>Surprise me</button>
+          </section>
+        </div>
+      </aside>
+
+      {!narrow && (
+        <button type="button" className="tab" data-show={!open} tabIndex={open ? -1 : 0} aria-hidden={open} onClick={onToggle}>
+          Controls
+        </button>
+      )}
+    </>
+  );
+}
+
+function Slider({ id, label, hint, value, onChange }: { id: string; label: string; hint: string; value: number; onChange(v: number): void }) {
+  const pct = Math.round(value * 100);
+  return (
+    <div className="slider">
+      <div className="row">
+        <label htmlFor={id}>{label}</label>
+        <output htmlFor={id} className="dim">{pct}</output>
+      </div>
+      <input
+        id={id} type="range" min={0} max={100} step={1} value={pct} aria-describedby={`${id}-hint`}
+        style={{ ['--v' as string]: `${pct}%` }} onChange={(e) => onChange(Number(e.target.value) / 100)}
+      />
+      <p id={`${id}-hint`} className="dim small">{hint}</p>
+    </div>
+  );
+}

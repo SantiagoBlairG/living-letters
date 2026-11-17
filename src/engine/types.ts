@@ -123,5 +123,7 @@ export interface Material {
   /** Draws under the letters, in stage pixels (strings, ripples…). Also part of exports. */
   back?(ctx: CanvasRenderingContext2D, w: World, colors: Record<ColorKey, RGB>): void;
   /** Draws one letter in its own transform, with its fill already set. Return true to replace the plain glyph. */
+  /** Draws over the letters, before effects. `scale` is device pixels per stage pixel. */
+  front?(ctx: CanvasRenderingContext2D, w: World, colors: Record<ColorKey, RGB>, scale: number): void;
   drawLetter?(ctx: CanvasRenderingContext2D, l: Letter, w: World, colors: Record<ColorKey, RGB>, liftPx: number): boolean;
 }

@@ -46,5 +46,10 @@ export function renderScene(ctx: CanvasRenderingContext2D, st: Stage, scale: num
   }
   ctx.globalAlpha = 1;
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  if (mat.front) {
+    mat.front(ctx, st, c, scale);
+    ctx.globalAlpha = 1;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  }
   st.fx.draw(ctx, c);
 }

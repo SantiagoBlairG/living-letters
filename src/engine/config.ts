@@ -69,8 +69,8 @@ export const MATERIALS: MaterialInfo[] = [
   },
   {
     id: 'melt', label: 'Melt', note: 'Drips and puddles',
-    help: 'Hover to melt · Click to splash · Drag a letter to stretch it like caramel',
-    touchHelp: 'Touch to melt · Tap to splash · Drag a letter to stretch it',
+    help: 'Hover to melt · Click to splash · Hold a letter to pour it, drag to paint',
+    touchHelp: 'Tap to splash · Hold a letter to pour it, drag to paint',
   },
 ];
 

@@ -14,7 +14,7 @@ Ten materials, each with its own physics, cursor and sound:
 | Wave | rocks the letters and presses the surface | drops a ripple that travels through the word | leaves a wake |
 | Shatter | cracks spread from the pointer until the letter gives | breaks the letter into shards that fly back together | hold anywhere to charge a blast that shatters everything in reach |
 | Sand | the letter fades into grains that loosen from the surface inward and blow away | a dust cloud | cuts a furrow through the grains |
-| Melt | the letter drips from where you touch | a splash that sets the letters running | stretches a strand out of the letter like caramel, until it snaps |
+| Melt | the letter drips from where you touch | a splash that sets the letters running | hold a letter and it pours into a puddle; drag to paint with it |
 | Gravity | the pointer is a ball that shoves letters | flips gravity (on a letter: kicks it) | pick a letter up and throw it |
 
 ## Run it

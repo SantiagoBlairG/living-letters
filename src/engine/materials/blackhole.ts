@@ -29,7 +29,43 @@ interface Hole {
 }
 
 /** A letter on its way in: a decaying orbit, flattened into the plane of the disk. */
-interface Fall { h: Hole; t0: number; dur: number; r0: number; a0: number; dir: number; rot0: number }
+interface Fall {
+  h: Hole; t0: number; dur: number; r0: number; a0: number; dir: number; rot0: number;
+  s: number; // how far the stretching has gone, 0..1
+  d: number; // current distance from the letter's pivot to the centre of the hole, px
+}
+
+const STRIPS = 22;
+
+/**
+ * Draws a falling letter in thin strips across its length (its local y axis already points at the hole).
+ * Strips nearer the hole are pulled further and squeezed thinner, so the letter becomes a tapering strand
+ * whose tip runs into the shadow — the part that has gone in gets long and small, as tidal forces do.
+ */
+function strand(ctx: CanvasRenderingContext2D, l: Letter, f: Fall, fs: number, liftPx: number) {
+  const g = l.glyph!.box;
+  const yt = g[1] * fs + liftPx, yb = g[3] * fs + liftPx; // far end, near end (local px)
+  const s = f.s;
+  const top = yt * (1 - 0.55 * s); // the far end is drawn in a little
+  const tip = yb + (Math.max(f.d, yb) - yb) * s; // the near end reaches toward the centre of the hole
+  const len = Math.max(2, tip - top);
+  const k = 2.2 * s; // how much more the near part is stretched than the far part
+  const map = (v: number) => top + (len * (v + k * v * v)) / (1 + k);
+  const thin = Math.max(0.12, Math.min(1, f.d / (fs * 0.6))); // and the whole strand narrows as it goes in
+  for (let i = 0; i < STRIPS; i++) {
+    const v0 = i / STRIPS, v1 = (i + 1) / STRIPS;
+    const a = yt + (yb - yt) * v0, b = yt + (yb - yt) * v1;
+    const a2 = map(v0), b2 = map(v1);
+    const sy = (b2 - a2) / (b - a);
+    const sx = (1 - 0.3 * s) * (1 - ((v0 + v1) / 2) * 0.9 * s) * (s > 0 ? thin : 1);
+    ctx.save();
+    ctx.translate(0, a2 - a * sy);
+    ctx.scale(sx, sy);
+    ctx.beginPath(); ctx.rect(-fs * 2, a - 0.6 / sy, fs * 4, b - a + 1.2 / sy); ctx.clip();
+    ctx.fillText(l.ch, -l.adv / 2, liftPx);
+    ctx.restore();
+  }
+}
 
 const holes: Hole[] = [];
 const falls = new Map<Letter, Fall>();
@@ -258,11 +294,11 @@ export const blackhole: Material = {
         const ux = h.x - x, uy = h.y - y;
         l.rot = angleTo(f.rot0, Math.atan2(-ux, uy), s);
         l.vr = 0;
-        // never longer than the distance it still has to fall, so it is drawn into the hole, not across the stage
-        const room = Math.max(0.25, r / (0.75 * fs));
-        l.syT = Math.min(1 + 1.6 * s, room); l.sxT = 1 - 0.7 * s; l.skT = 0;
+        // the stretching itself is drawn in drawLetter: it is not a plain scale but a taper toward the hole
+        f.s = s; f.d = Math.hypot(ux, uy);
+        l.skT = 0;
         l.heatT = Math.max(l.heatT, s * 0.8);
-        l.fade = q > 0.8 ? (q - 0.8) / 0.2 : 0;
+        l.fade = q > 0.9 ? (q - 0.9) / 0.1 : 0; // by then the tip is already under the shadow
         if (q >= 1) {
           falls.delete(l);
           h.eaten.push(l); h.quiet = w.t;
@@ -281,7 +317,7 @@ export const blackhole: Material = {
         if (d > reach(w, h, M)) continue;
         falls.set(l, {
           h, t0: w.t, dur: 1.5 + Math.min(1.4, (d / fs) * 0.5), r0: Math.max(d, fs * 0.05),
-          a0: Math.atan2(cy - h.y, cx - h.x), dir: 1, rot0: l.rot,
+          a0: Math.atan2(cy - h.y, cx - h.x), dir: 1, rot0: l.rot, s: 0, d,
         });
         h.quiet = w.t;
         w.sound.play('pulse', 0.35);
@@ -330,6 +366,13 @@ export const blackhole: Material = {
     h.mass = Math.max(1, h.mass); h.t0 = w.t; h.quiet = w.t;
     const live = holes.filter((x) => x.white < 0 && !x.held);
     if (live.length > 3) whiten(w, live[0]);
+  },
+
+  drawLetter(ctx, l, w, _colors, liftPx) {
+    const f = falls.get(l);
+    if (!f || f.s < 0.01) return false;
+    strand(ctx, l, f, w.fs, liftPx);
+    return true;
   },
 
   front(ctx, w) {

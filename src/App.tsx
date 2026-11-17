@@ -22,7 +22,7 @@ function devour(app: HTMLDivElement | null, at: { x: number; y: number } | null,
   if (!at) {
     if (app.dataset.devour !== 'in') return;
     app.dataset.devour = 'out';
-    timer.current = window.setTimeout(() => { delete app.dataset.devour; }, 800);
+    timer.current = window.setTimeout(() => { delete app.dataset.devour; }, 900);
     return;
   }
   const parts = [...app.querySelectorAll<HTMLElement>('[data-devour]')].map((el) => {
@@ -32,6 +32,12 @@ function devour(app: HTMLDivElement | null, at: { x: number; y: number } | null,
   }).sort((a, b) => a.d - b.d);
   parts.forEach(({ el, dx, dy }, i) => {
     el.style.setProperty('--dx', dx + 'px'); el.style.setProperty('--dy', dy + 'px');
+    // its long axis turns toward the hole, but never more than a quarter turn, so nothing ends up upside down;
+    // --side says which end (right +1, left -1) faces the hole and should recede into it
+    let ang = (Math.atan2(dy, dx) * 180) / Math.PI, side = 1;
+    if (ang > 90) { ang -= 180; side = -1; } else if (ang < -90) { ang += 180; side = -1; }
+    el.style.setProperty('--ang', ang + 'deg');
+    el.style.setProperty('--side', String(side));
     // a curved path: halfway there, it has swung out to the side, as if orbiting on the way in
     el.style.setProperty('--ox', -dy * 0.35 + 'px'); el.style.setProperty('--oy', dx * 0.35 + 'px');
     el.style.setProperty('--delay', i * 0.09 + 's');

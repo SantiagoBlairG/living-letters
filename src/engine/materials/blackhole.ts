@@ -1,16 +1,5 @@
 import type { Letter, Material, World } from '../types';
 import { clamp, tuneF } from '../simulation';
-import spriteUrl from '../../assets/blackhole.webp';
-
-/**
- * The rendered hole (src/assets/blackhole.webp): its black was turned into transparency, so it works on any
- * background. Its shadow is centred at (cx, cy) with radius r, in the sprite's own pixels.
- */
-const SPRITE = { W: 1400, H: 781, cx: 703, cy: 394, r: 151 };
-const sprite = typeof Image !== 'undefined' ? new Image() : null;
-let spriteReady = false;
-if (sprite) { sprite.src = spriteUrl; sprite.decode().then(() => { spriteReady = true; }, () => {}); }
-
 /**
  * Gravity at its most extreme. The pointer is a small black hole that bends letters toward it.
  * A click leaves a hole behind whose reach keeps growing: one by one, nearest first, every letter is
@@ -153,164 +142,108 @@ function whiten(w: World, h: Hole) {
   if (h.devoured) w.devour(null);
 }
 
-/* ---------- drawing: a Gargantua-style hole, lit by its own disk ---------- */
+/* ---------- drawing: built from streaks of light, after the reference render ---------- */
 
 const HOT = '255,244,224', AMBER = '255,186,92', ORANGE = '255,118,40', RED = '196,52,16';
-/** Fills the ring between two concentric half-ellipses with light that is white-hot inside and red at the rim. */
-function arch(ctx: CanvasRenderingContext2D, ox: number, oy: number, ix: number, iy: number, from: number, to: number, bright: number) {
-  ctx.beginPath();
-  ctx.ellipse(0, 0, ox, oy, 0, from, to);
-  ctx.ellipse(0, 0, ix, iy, 0, to, from, true);
-  ctx.closePath();
-  const g = ctx.createRadialGradient(0, 0, ix * 0.95, 0, 0, ox);
-  g.addColorStop(0, `rgba(${HOT},${bright})`);
-  g.addColorStop(0.3, `rgba(${AMBER},${bright * 0.9})`);
-  g.addColorStop(0.65, `rgba(${ORANGE},${bright * 0.6})`);
-  g.addColorStop(1, `rgba(${RED},0)`);
-  ctx.fillStyle = g;
-  ctx.fill();
-}
+const COLS = [HOT, AMBER, ORANGE, RED];
+const TILT = -0.38; // the disk rises to the right
+/** Stable pseudo-random numbers, so each streak keeps its own look from frame to frame. */
+const rnd = (i: number, k: number) => { const v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return v - Math.floor(v); };
 
-/** Thin moving streaks laid over the light, so the disk reads as matter flowing round. */
-function streaks(ctx: CanvasRenderingContext2D, R: number, t: number, r0: number, r1: number, ry: number, from: number, to: number, a: number) {
-  ctx.lineWidth = Math.max(0.8, R * 0.02);
-  for (let i = 0; i < 6; i++) {
-    const rx = R * (r0 + ((r1 - r0) * i) / 5);
-    ctx.strokeStyle = `rgba(${i % 2 ? HOT : AMBER},${a * (1 - i * 0.12)})`;
-    ctx.setLineDash([R * (0.5 + i * 0.15), R * (0.25 + i * 0.05)]);
-    ctx.lineDashOffset = -t * R * (2.5 - i * 0.2);
-    ctx.beginPath(); ctx.ellipse(0, 0, rx, rx * ry, 0, from, to); ctx.stroke();
+/**
+ * One family of streaks: concentric ellipses (inner ones hotter and brighter), each drawn as long dashes
+ * that slide along it — the inner ones faster, as in a real orbit — so the light visibly streams round.
+ */
+function streaks(
+  ctx: CanvasRenderingContext2D, R: number, t: number, n: number, r0: number, r1: number,
+  flat: number, from: number, to: number, bright: number, seed: number,
+) {
+  for (let i = 0; i < n; i++) {
+    const u = (i + rnd(i, seed) * 0.8) / n; // 0 inner … 1 outer
+    const r = R * (r0 + (r1 - r0) * u);
+    const c = COLS[Math.min(3, Math.floor(u * 2.6 + rnd(i, seed + 1) * 0.9))];
+    const a = bright * (1 - u * 0.6) * (0.45 + 0.55 * rnd(i, seed + 2));
+    ctx.strokeStyle = `rgba(${c},${a.toFixed(3)})`;
+    ctx.lineWidth = Math.max(0.6, R * (0.012 + 0.03 * rnd(i, seed + 3)));
+    ctx.setLineDash([r * (1 + rnd(i, seed + 4) * 2.6), r * (0.02 + rnd(i, seed + 5) * 0.1)]);
+    ctx.lineDashOffset = -t * R * (2.4 / Math.sqrt(r / R)) - rnd(i, seed + 6) * 1000;
+    ctx.beginPath(); ctx.ellipse(0, 0, r, r * flat, 0, from, to); ctx.stroke();
   }
   ctx.setLineDash([]);
 }
 
-const TILT = -0.4; // the disk rises to the right, like the icon
-
-// The disk's outline: a crescent between an outer ellipse and an inner one lifted toward the back,
-// so it is thick where it passes in front, thin behind, and comes to points at both ends.
-const OUT_RX = 2.75, OUT_RY = 0.66, IN_RX = 2.6, IN_RY = 0.44, IN_LIFT = 0.15;
-
-function crescent(ctx: CanvasRenderingContext2D, R: number) {
-  ctx.beginPath();
-  ctx.ellipse(0, 0, R * OUT_RX, R * OUT_RY, 0, 0, TAU);
-  ctx.ellipse(0, -R * IN_LIFT, R * IN_RX, R * IN_RY, 0, TAU, 0, true);
+/** A soft wide underlay for a family of streaks, so they glow instead of reading as wires. */
+function haze(ctx: CanvasRenderingContext2D, R: number, r: number, flat: number, width: number, from: number, to: number, a: number) {
+  ctx.strokeStyle = `rgba(${ORANGE},${a})`;
+  ctx.lineWidth = R * width;
+  ctx.beginPath(); ctx.ellipse(0, 0, R * r, R * r * flat, 0, from, to); ctx.stroke();
 }
 
-/**
- * The accretion disk, seen nearly edge-on: a crescent of light wrapped round the hole. Only one half is
- * drawn per call — the far half goes behind the shadow, the near half crosses in front of it — so it reads
- * as one object around the hole, not a stripe laid on top.
- */
-function disk(ctx: CanvasRenderingContext2D, R: number, t: number, near: boolean) {
-  const L = R * OUT_RX;
+// the three families: the disk itself, the far side bent up over the top, and the faint ring under it
+const DISK = { n: 28, r0: 1.35, r1: 4.3, flat: 0.085, bright: 0.9, seed: 1 };
+const ARCH = { n: 36, r0: 1.1, r1: 2.15, flat: 0.95, bright: 1, seed: 2 };
+const LOWER = { n: 18, r0: 1.08, r1: 1.75, flat: 0.92, bright: 0.6, seed: 3 };
+
+function diskHalf(ctx: CanvasRenderingContext2D, R: number, t: number, near: boolean, op: GlobalCompositeOperation) {
+  const L = R * DISK.r1 * 1.05;
   ctx.save();
-  ctx.rotate(TILT);
   ctx.beginPath();
-  if (near) ctx.rect(-L * 1.2, 0, L * 2.4, L); else ctx.rect(-L * 1.2, -L, L * 2.4, L);
+  if (near) ctx.rect(-L, 0, L * 2, L); else ctx.rect(-L, -L, L * 2, L);
   ctx.clip();
-  crescent(ctx, R);
-  // white-hot in the middle, cooling to red and fading out at the points; brighter on the side coming toward us
-  const g = ctx.createLinearGradient(-L, 0, L, 0);
-  g.addColorStop(0, `rgba(${RED},0)`);
-  g.addColorStop(0.12, `rgba(${ORANGE},0.7)`);
-  g.addColorStop(0.32, `rgba(${HOT},1)`);
-  g.addColorStop(0.52, `rgba(${HOT},0.95)`);
-  g.addColorStop(0.72, `rgba(${AMBER},0.8)`);
-  g.addColorStop(0.9, `rgba(${ORANGE},0.4)`);
-  g.addColorStop(1, `rgba(${RED},0)`);
-  ctx.fillStyle = g;
-  ctx.fill();
-  // matter streaming round inside it
-  ctx.save();
-  ctx.clip();
-  ctx.shadowBlur = 0;
-  ctx.lineWidth = Math.max(0.8, R * 0.025);
-  for (let i = 0; i < 5; i++) {
-    const k = i / 4;
-    ctx.strokeStyle = `rgba(${i % 2 ? ORANGE : HOT},0.45)`;
-    ctx.setLineDash([R * (0.7 + k * 0.3), R * 0.22]);
-    ctx.lineDashOffset = -t * R * (3 - k);
-    ctx.beginPath();
-    ctx.ellipse(0, -R * IN_LIFT * (1 - k) * 0.6, R * (IN_RX + (OUT_RX - IN_RX) * k), R * (IN_RY + (OUT_RY - IN_RY) * (0.3 + 0.7 * k)), 0, 0, TAU);
-    ctx.stroke();
-  }
-  ctx.setLineDash([]);
-  ctx.restore();
+  ctx.globalCompositeOperation = op;
+  haze(ctx, R, 2.6, DISK.flat * 1.2, 0.35, 0, TAU, 0.14);
+  streaks(ctx, R, t, DISK.n, DISK.r0, DISK.r1, DISK.flat, 0, TAU, DISK.bright, DISK.seed);
   ctx.restore();
 }
 
 /**
- * A Gargantua-style hole: a disk that wraps around it (far half behind, near half in front), the image of
- * the far side bent up over the top and, fainter, under the bottom, a black shadow edged by the photon
- * ring, and a soft bloom over all of it.
+ * The hole: the far half of its disk, the lensed rings above and below, the shadow edged by the photon
+ * ring, then the near half of the disk crossing in front — everything moving. On dark backgrounds the
+ * light adds up; on light ones it is painted normally so it stays visible.
  */
-function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, tw: number) {
+function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, tw: number, dark: boolean) {
+  const op: GlobalCompositeOperation = dark ? 'lighter' : 'source-over';
   ctx.save();
   ctx.translate(h.x, h.y);
   ctx.globalAlpha = tw;
+  ctx.lineCap = 'round';
 
-  // bloom, wider than it is tall
+  // bloom, along the disk
   ctx.save();
-  ctx.scale(1.7, 1);
-  const g = ctx.createRadialGradient(0, 0, R, 0, 0, R * 3.2);
-  g.addColorStop(0, `rgba(${ORANGE},0.3)`); g.addColorStop(0.45, `rgba(${RED},0.09)`); g.addColorStop(1, `rgba(${RED},0)`);
+  ctx.rotate(TILT);
+  ctx.scale(2, 1);
+  const g = ctx.createRadialGradient(0, 0, R * 0.8, 0, 0, R * 2.6);
+  g.addColorStop(0, `rgba(${ORANGE},0.3)`); g.addColorStop(0.5, `rgba(${RED},0.08)`); g.addColorStop(1, `rgba(${RED},0)`);
   ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(0, 0, R * 3.2, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, R * 2.6, 0, TAU); ctx.fill();
   ctx.restore();
 
-  ctx.shadowColor = `rgba(${ORANGE},0.85)`;
-  ctx.shadowBlur = R * 0.7;
-  disk(ctx, R, t, false); // far half, behind everything else
-  ctx.shadowBlur = R * 0.6;
-  ctx.save();
-  ctx.rotate(TILT * 0.4);
-  arch(ctx, R * 1.62, R * 1.5, R * 1.05, R * 1.03, Math.PI, TAU, 1); // the far side, bent over the top
-  arch(ctx, R * 1.32, R * 1.28, R * 1.04, R * 1.02, 0.12, Math.PI - 0.12, 0.45); // and under the bottom
-  ctx.shadowBlur = 0;
-  streaks(ctx, R, t, 1.12, 1.5, 0.93, Math.PI, TAU, 0.4);
-  ctx.restore();
+  ctx.rotate(TILT);
+  diskHalf(ctx, R, t, false, op);
+  ctx.globalCompositeOperation = op;
+  // the ring of light under the shadow (the underside of the disk, lensed)
+  haze(ctx, R, 1.4, LOWER.flat, 0.5, 0.05, Math.PI - 0.05, 0.12);
+  streaks(ctx, R, -t * 0.8, LOWER.n, LOWER.r0, LOWER.r1, LOWER.flat, 0.05, Math.PI - 0.05, LOWER.bright, LOWER.seed);
+  // the far side of the disk, bent up and over the top of the shadow
+  haze(ctx, R, 1.6, ARCH.flat, 0.9, Math.PI, TAU, 0.16);
+  streaks(ctx, R, t, ARCH.n, ARCH.r0, ARCH.r1, ARCH.flat, Math.PI, TAU, ARCH.bright, ARCH.seed);
 
-  // the shadow: nothing comes back from in here
+  // the shadow, and the thin photon ring hugging it
+  ctx.globalCompositeOperation = 'source-over';
   ctx.fillStyle = '#000';
   ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
-  // the photon ring, hugging its edge
-  ctx.shadowBlur = R * 0.3; ctx.shadowColor = `rgba(${AMBER},1)`;
-  ctx.strokeStyle = `rgba(${HOT},0.95)`;
-  ctx.lineWidth = Math.max(1, R * 0.03);
-  ctx.beginPath(); ctx.arc(0, 0, R * 1.03, 0, TAU); ctx.stroke();
+  ctx.globalCompositeOperation = op;
+  ctx.strokeStyle = `rgba(${AMBER},0.85)`;
+  ctx.lineWidth = Math.max(1, R * 0.016);
+  ctx.beginPath(); ctx.arc(0, 0, R * 1.0, 0, TAU); ctx.stroke();
 
-  // the near half of the disk wraps round in front of the shadow
-  ctx.shadowBlur = R * 0.7; ctx.shadowColor = `rgba(${ORANGE},0.9)`;
-  disk(ctx, R, t, true);
-  ctx.restore();
-}
-
-/**
- * The hole drawn from the rendered sprite, with the effects around it kept: the bloom, a black shadow
- * underneath (so it stays black on light palettes), a slow sway, and a shimmer of extra light so it never
- * sits still.
- */
-function drawSprite(ctx: CanvasRenderingContext2D, img: HTMLImageElement, R: number, t: number, tw: number) {
-  const k = R / SPRITE.r;
-  ctx.save();
-  ctx.globalAlpha = tw;
-  ctx.save();
-  ctx.scale(1.7, 1);
-  const g = ctx.createRadialGradient(0, 0, R, 0, 0, R * 3.4);
-  g.addColorStop(0, `rgba(${ORANGE},0.28)`); g.addColorStop(0.45, `rgba(${RED},0.08)`); g.addColorStop(1, `rgba(${RED},0)`);
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(0, 0, R * 3.4, 0, TAU); ctx.fill();
-  ctx.restore();
-  const s = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.4);
-  s.addColorStop(0, '#000'); s.addColorStop(0.76, '#000'); s.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = s;
-  ctx.beginPath(); ctx.arc(0, 0, R * 1.4, 0, TAU); ctx.fill();
-  ctx.rotate(Math.sin(t * 0.5) * 0.02);
-  ctx.drawImage(img, -SPRITE.cx * k, -SPRITE.cy * k, SPRITE.W * k, SPRITE.H * k);
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = tw * (0.1 + 0.08 * Math.sin(t * 2.3));
-  const k2 = k * 1.012;
-  ctx.drawImage(img, -SPRITE.cx * k2, -SPRITE.cy * k2, SPRITE.W * k2, SPRITE.H * k2);
+  // the near half of the disk crosses in front, hottest where it is closest to the hole on the left
+  diskHalf(ctx, R, t, true, op);
+  ctx.globalCompositeOperation = op;
+  const hot = ctx.createRadialGradient(-R * 1.9, R * 0.04, 0, -R * 1.9, R * 0.04, R * 1.1);
+  hot.addColorStop(0, `rgba(${HOT},0.35)`); hot.addColorStop(1, `rgba(${HOT},0)`);
+  ctx.fillStyle = hot;
+  ctx.beginPath(); ctx.ellipse(-R * 1.9, R * 0.04, R * 1.1, R * 0.2, 0, 0, TAU); ctx.fill();
   ctx.restore();
 }
 
@@ -395,6 +328,7 @@ export const blackhole: Material = {
         if (q >= 1) {
           falls.delete(l);
           h.eaten.push(l); h.quiet = w.t;
+          l.fade = 1; // hidden this very frame, or it would flash up whole for one frame
           w.sound.play('press');
         }
         continue;
@@ -468,7 +402,8 @@ export const blackhole: Material = {
     return true;
   },
 
-  front(ctx, w) {
+  front(ctx, w, colors) {
+    const dark = colors.bg[0] * 0.3 + colors.bg[1] * 0.59 + colors.bg[2] * 0.11 < 110;
     const fs = w.fs;
     for (const h of holes) {
       const wt = h.white >= 0 ? clamp((w.t - h.white) / WHITE, 0, 1) : 0;
@@ -483,11 +418,7 @@ export const blackhole: Material = {
       const grow = h.held ? 1 : clamp((w.t - h.t0) / 0.25, 0, 1);
       const R = fs * (0.075 + 0.045 * h.mass) * grow * (1 - wt) * (h.devoured ? 1.5 : 1);
       if (R < 1) continue;
-      if (sprite && spriteReady) { // the rendered hole; the drawn one only while the image is still loading
-        ctx.save(); ctx.translate(h.x, h.y);
-        drawSprite(ctx, sprite, R * 1.3, h.spin, 1 - wt); // a touch bigger: the render carries more detail
-        ctx.restore();
-      } else drawHole(ctx, h, R, h.spin, 1 - wt);
+      drawHole(ctx, h, R * 1.25, h.spin, 1 - wt, dark);
     }
   },
 };

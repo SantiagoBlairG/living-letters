@@ -4,7 +4,7 @@ import type { Plants } from './plants';
 import type { Sound } from './audio';
 import type { RGB } from './color';
 
-export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity' | 'balloon' | 'wave';
+export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity' | 'balloon' | 'wave' | 'explode';
 export type ColorKey = 'bg' | 'ink' | 'stem' | 'flower' | 'spark';
 
 export interface Palette {
@@ -122,4 +122,6 @@ export interface Material {
   reset?(w: World): void;
   /** Draws under the letters, in stage pixels (strings, ripples…). Also part of exports. */
   back?(ctx: CanvasRenderingContext2D, w: World, colors: Record<ColorKey, RGB>): void;
+  /** Draws one letter in its own transform, with its fill already set. Return true to replace the plain glyph. */
+  drawLetter?(ctx: CanvasRenderingContext2D, l: Letter, w: World, colors: Record<ColorKey, RGB>, liftPx: number): boolean;
 }

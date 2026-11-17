@@ -1,8 +1,8 @@
 /** Tiny synthesized sounds. Nothing is created until the user turns sound on. */
 
-export type SoundName = 'press' | 'pop' | 'boing' | 'pulse' | 'sprout' | 'flower' | 'gust' | 'thud' | 'flip' | 'bang' | 'squeak' | 'drip';
+export type SoundName = 'press' | 'pop' | 'boing' | 'pulse' | 'sprout' | 'flower' | 'gust' | 'thud' | 'flip' | 'bang' | 'squeak' | 'drip' | 'crack' | 'shatter' | 'boom';
 
-const GAP: Record<SoundName, number> = { press: 90, pop: 90, boing: 120, pulse: 140, sprout: 130, flower: 160, gust: 180, thud: 70, flip: 200, bang: 90, squeak: 150, drip: 110 };
+const GAP: Record<SoundName, number> = { press: 90, pop: 90, boing: 120, pulse: 140, sprout: 130, flower: 160, gust: 180, thud: 70, flip: 200, bang: 90, squeak: 150, drip: 110, crack: 110, shatter: 70, boom: 220 };
 const SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
 
 export class Sound {
@@ -39,6 +39,18 @@ export class Sound {
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
     return this.noise;
+  }
+
+  /** A burst of filtered noise. */
+  private hiss(type: BiquadFilterType, freq: number, dur: number, vol: number, when = 0) {
+    const ac = this.ac!, t = ac.currentTime + when;
+    const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = this.noiseBuf();
+    f.type = type; f.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(this.out!);
+    src.start(t); src.stop(t + dur + 0.02);
   }
 
   private tone(type: OscillatorType, f0: number, f1: number, dur: number, vol: number, when = 0) {
@@ -79,6 +91,12 @@ export class Sound {
       }
       case 'squeak': this.tone('triangle', 420 + amount * 520, 470 + amount * 560, 0.11, 0.07); break;
       case 'drip': this.tone('sine', 360, 1250, 0.08, 0.32 * v); this.tone('sine', 900, 620, 0.14, 0.12 * v, 0.06); break;
+      case 'crack': this.hiss('highpass', 3200, 0.05, 0.22 * v); break;
+      case 'shatter':
+        this.hiss('highpass', 2400, 0.28, 0.45 * v);
+        for (let i = 0; i < 4; i++) this.tone('sine', 2200 + Math.random() * 2200, 1800, 0.09, 0.07 * v, 0.03 + i * 0.045);
+        break;
+      case 'boom': this.tone('sine', 120, 32, 0.6, 0.75 * v); this.hiss('lowpass', 420, 0.5, 0.5 * v); break;
       case 'thud': this.tone('sine', 150, 48, 0.13, 0.55 * v); break;
       case 'flip': this.tone('triangle', 620, 150, 0.22, 0.3 * v); this.tone('sine', 150, 420, 0.2, 0.2 * v, 0.12); break;
       case 'sprout': this.tone('sine', SCALE[(Math.random() * SCALE.length) | 0] * 2, 1400, 0.06, 0.1 * v); break;

@@ -41,7 +41,7 @@ export function renderScene(ctx: CanvasRenderingContext2D, st: Stage, scale: num
     ctx.globalAlpha = Math.min(1, l.alpha);
     if (hasPlants) st.plants.draw(ctx, l, false, c, st.fs, liftPx, st.t, st.amb, st.speed);
     ctx.fillStyle = css(l.heat > 0.01 ? mix(c.ink, accent, Math.min(1, l.heat) * 0.85) : c.ink);
-    ctx.fillText(l.ch, -l.adv / 2, liftPx);
+    if (!mat.drawLetter?.(ctx, l, st, c, liftPx)) ctx.fillText(l.ch, -l.adv / 2, liftPx);
     if (hasPlants) st.plants.draw(ctx, l, true, c, st.fs, liftPx, st.t, st.amb, st.speed);
   }
   ctx.globalAlpha = 1;

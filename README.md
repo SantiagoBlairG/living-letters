@@ -2,7 +2,7 @@
 
 A playground for words. Type a word, pick a material, and touch the letters.
 
-Seven materials, each with its own physics, cursor and sound:
+Eight materials, each with its own physics, cursor and sound:
 
 | Material | Hover | Click | Drag |
 | --- | --- | --- | --- |
@@ -12,6 +12,7 @@ Seven materials, each with its own physics, cursor and sound:
 | Float | pointer movement becomes a current | radial gust | tow a letter on an elastic thread |
 | Balloon | inflates the letters, which pop when full | pops a letter into confetti (on empty stage: a puff of air) | stretches a letter on its string |
 | Wave | rocks the letters and presses the surface | drops a ripple that travels through the word | leaves a wake |
+| Shatter | cracks spread from the pointer until the letter gives | breaks the letter into shards that fly back together | hold anywhere to charge a blast that shatters everything in reach |
 | Gravity | the pointer is a ball that shoves letters | flips gravity (on a letter: kicks it) | pick a letter up and throw it |
 
 ## Run it
@@ -42,7 +43,7 @@ src/
     stage.ts              the single requestAnimationFrame loop, pointer input, the "world"
     layout.ts             word sizing, kerned glyph positions, glyph alpha masks + outline points
     simulation.ts         damped springs per letter (position, rotation, scale, skew), delta time
-    materials/            jelly, balloon, magnet, bloom, float, wave, gravity — one behaviour each (gravity runs its own rigid-body step)
+    materials/            jelly, balloon, magnet, bloom, float, wave, gravity, explode — one behaviour each (gravity runs its own rigid-body step)
     plants.ts             Bloom's vector garden, anchored to glyph silhouettes
     effects.ts            rings, pulses, gusts, bursts
     cursor.ts             the four drawn cursors

@@ -119,6 +119,17 @@ export class CursorView {
       ctx.arc(0, 2 * k, 6 * k, 0, Math.PI);
       ctx.bezierCurveTo(-6 * k, -1 * k, -3 * k, -5 * k, 0, -10 * k);
       ctx.fill();
+    } else if (mat === 'explode') {
+      // a spark: eight rays that spin faster while you charge
+      const r = 9 + press * 4;
+      ctx.rotate(this.spin * 0.3);
+      ctx.strokeStyle = css(colors.flower); ctx.lineWidth = 1.8;
+      for (let i = 0; i < 8; i++) {
+        const a = (i * Math.PI) / 4, r0 = i % 2 ? r * 0.45 : r * 0.35, r1 = i % 2 ? r * 0.75 : r;
+        ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); ctx.lineTo(Math.cos(a) * r1, Math.sin(a) * r1); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.arc(0, 0, 2.6, 0, 6.2832);
+      ctx.fillStyle = css(colors.ink); ctx.fill();
     } else if (mat === 'gravity') {
       // a solid ball: the thing you shove letters with
       const r = 9 - press * 2.5;

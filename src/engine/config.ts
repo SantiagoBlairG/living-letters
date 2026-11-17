@@ -57,6 +57,11 @@ export const MATERIALS: MaterialInfo[] = [
     help: 'Hover to shove · Click to flip gravity · Drag to throw',
     touchHelp: 'Swipe to shove · Tap to flip gravity · Drag a letter to throw',
   },
+  {
+    id: 'explode', label: 'Shatter', note: 'Cracks, breaks, explodes',
+    help: 'Hover to crack · Click to shatter · Hold to charge a blast',
+    touchHelp: 'Tap a letter to shatter · Hold to charge a blast',
+  },
 ];
 
 export const SUGGESTIONS = ['hello', 'jelly', 'bloom', 'float', 'chaos'];
@@ -82,4 +87,7 @@ export const PRESETS: { word: string; material: MaterialId; palette: string }[] 
   { word: 'pop!', material: 'balloon', palette: 'acid' },
   { word: 'ocean', material: 'wave', palette: 'cobalt' },
   { word: 'ola', material: 'wave', palette: 'night' },
+  { word: 'boom', material: 'explode', palette: 'ember' },
+  { word: 'glass', material: 'explode', palette: 'paper' },
+  { word: 'crash', material: 'explode', palette: 'night' },
 ];

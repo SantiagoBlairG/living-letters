@@ -60,8 +60,10 @@ export function integrate(letters: Letter[], s: SpringSpec, dt: number, fs: numb
     else if (d > lim) { const q = lim / d; l.ox *= q; l.oy *= q; l.vx *= 0.5; l.vy *= 0.5; }
     const v = Math.hypot(l.vx, l.vy);
     if (!free && v > vmax) { l.vx *= vmax / v; l.vy *= vmax / v; }
-    if (l.sx < 0.6 || l.sx > 1.6) { l.sx = clamp(l.sx, 0.6, 1.6); l.vsx *= 0.3; }
-    if (l.sy < 0.6 || l.sy > 1.6) { l.sy = clamp(l.sy, 0.6, 1.6); l.vsy *= 0.3; }
+    // free materials may deform much further (a black hole stretches letters into strands)
+    const smin = free ? 0.15 : 0.6, smax = free ? 4 : 1.6;
+    if (l.sx < smin || l.sx > smax) { l.sx = clamp(l.sx, smin, smax); l.vsx *= 0.3; }
+    if (l.sy < smin || l.sy > smax) { l.sy = clamp(l.sy, smin, smax); l.vsy *= 0.3; }
     if (!free && !loose && Math.abs(l.rot) > 0.5) { l.rot = clamp(l.rot, -0.5, 0.5); l.vr *= 0.3; }
     if (Math.abs(l.sk) > 0.5) { l.sk = clamp(l.sk, -0.5, 0.5); l.vsk *= 0.3; }
     l.heat += (l.heatT - l.heat) * (1 - Math.exp(-dt * 9));

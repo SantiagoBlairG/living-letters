@@ -40,7 +40,7 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
   const custom = settings.palette === 'custom';
   const setCustom = (c: Partial<CustomColors>) => onChange({ custom: { ...settings.custom, ...c } });
   return (
-    <aside id="panel" className="panel glass" data-open={open} aria-label="Controls">
+    <aside id="panel" className="panel glass" data-open={open} aria-label="Controls" data-devour>
       <button type="button" className="handle" onClick={onToggle} aria-expanded={open}>
         <span className="grip" aria-hidden="true" />
         <span>{open ? 'Close controls' : 'Controls'}</span>

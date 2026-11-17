@@ -15,7 +15,7 @@ Twelve materials, each with its own physics, cursor and sound:
 | Shatter | cracks spread from the pointer until the letter gives | breaks the letter into shards that fly back together | hold anywhere to charge a blast that shatters everything in reach |
 | Sand | the letter fades into grains that loosen from the surface inward and blow away | a dust cloud | cuts a furrow through the grains |
 | Melt | the letter drips from where you touch | a splash that sets the letters running | hold a letter and it pours into a puddle; drag to paint with it |
-| Black hole | bends and stretches the letters toward the pointer | leaves a hole that swallows letters, then spits them back out as a white hole | hold to grow a hole under the hand; let go to release everything |
+| Black hole | bends and stretches the letters toward the pointer | leaves a hole whose reach grows until every letter, nearest first, has orbited in, been stretched into a strand and swallowed; then it spits them back out as a white hole | hold to grow a hole under the hand; at full size it swallows the interface too; let go to release everything |
 | Elements | fire sets letters alight · air makes them flutter · earth turns them to stone · water rains on them | fireball · tornado · earthquake · downpour | trail of fire · gust · cracks · moves the storm |
 | Gravity | the pointer is a ball that shoves letters | flips gravity (on a letter: kicks it) | pick a letter up and throw it |
 

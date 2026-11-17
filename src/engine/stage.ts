@@ -17,6 +17,8 @@ export interface StageEvents {
   onInteract?(): void;
   /** the mouse wheel over the stage, in pixels (positive = down) */
   onWheel?(dy: number): void;
+  /** the interface should be swallowed toward this point, or given back (null) */
+  onDevour?(at: { x: number; y: number } | null): void;
 }
 
 /** Owns the canvas, the single animation loop, pointer input and the world the materials act on. */
@@ -115,6 +117,7 @@ export class Stage implements World {
         for (const l of this.letters) l.rot = Math.atan2(Math.sin(l.rot), Math.cos(l.rot));
       }
       for (const l of this.letters) l.fade = 0;
+      if (prev.material === 'blackhole') this.devour(null);
       this.material = next.material;
       this.cursor.setMaterial(next.material);
       BEHAVIORS[next.material].enter?.(this);
@@ -179,6 +182,8 @@ export class Stage implements World {
   }
 
   /* ---------- World ---------- */
+
+  devour(at: { x: number; y: number } | null) { this.events.onDevour?.(at); }
 
   later(ms: number, fn: () => void) { this.timers.push({ at: this.t + ms / 1000, fn }); }
   cx(l: Letter) { return l.bx + l.ox; }

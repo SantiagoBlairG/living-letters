@@ -12,6 +12,33 @@ const INITIAL: Settings = {
   custom: DEFAULT_CUSTOM, font: 'serif', tune: {}, element: 'fire',
 };
 
+/**
+ * The black hole eating the interface: every piece marked data-devour is sent spiralling into the point,
+ * nearest first, squeezed like a genie into a bottle. With null, it is all thrown back out.
+ */
+function devour(app: HTMLDivElement | null, at: { x: number; y: number } | null, timer: { current: number }) {
+  if (!app) return;
+  window.clearTimeout(timer.current);
+  if (!at) {
+    if (app.dataset.devour !== 'in') return;
+    app.dataset.devour = 'out';
+    timer.current = window.setTimeout(() => { delete app.dataset.devour; }, 800);
+    return;
+  }
+  const parts = [...app.querySelectorAll<HTMLElement>('[data-devour]')].map((el) => {
+    const r = el.getBoundingClientRect();
+    const dx = at.x - (r.left + r.width / 2), dy = at.y - (r.top + r.height / 2);
+    return { el, dx, dy, d: Math.hypot(dx, dy) };
+  }).sort((a, b) => a.d - b.d);
+  parts.forEach(({ el, dx, dy }, i) => {
+    el.style.setProperty('--dx', dx + 'px'); el.style.setProperty('--dy', dy + 'px');
+    // a curved path: halfway there, it has swung out to the side, as if orbiting on the way in
+    el.style.setProperty('--ox', -dy * 0.35 + 'px'); el.style.setProperty('--oy', dx * 0.35 + 'px');
+    el.style.setProperty('--delay', i * 0.09 + 's');
+  });
+  app.dataset.devour = 'in';
+}
+
 const nextElement = (id: string, dir: number) => {
   const i = ELEMENTS.findIndex((e) => e.id === id);
   return ELEMENTS[(i + dir + ELEMENTS.length) % ELEMENTS.length].id;
@@ -39,6 +66,8 @@ export function App() {
   const [exporting, setExporting] = useState<ExportState>('idle');
   const coarseRef = useRef(coarse);
   const wheelAcc = useRef(0);
+  const appRef = useRef<HTMLDivElement>(null);
+  const devourTimer = useRef(0);
   coarseRef.current = coarse;
 
   const patch = useCallback((p: Partial<Settings>) => setSettings((s) => ({ ...s, ...p })), []);
@@ -58,6 +87,7 @@ export function App() {
       onInteract: () => setHint(false),
       // touch has no keyboard until a field is focused, so it gets a small editor; a mouse just gets the caret
       onEmptyDoubleTap: (x, y) => { if (coarseRef.current) setEditor({ x, y }); else focusStageText(); },
+      onDevour: (at) => devour(appRef.current, at, devourTimer),
       // the wheel switches element while Elements is the material
       onWheel: (dy) => {
         wheelAcc.current += dy;
@@ -171,7 +201,7 @@ export function App() {
   const gestures = [coarse ? 'Double-tap to edit' : 'Type to rewrite', ...help.split(' · ')];
 
   return (
-    <div className="app" style={vars} data-panel={panelOpen ? 'open' : 'closed'}>
+    <div ref={appRef} className="app" style={vars} data-panel={panelOpen ? 'open' : 'closed'}>
       <canvas
         ref={canvasRef}
         className="stage"
@@ -189,12 +219,12 @@ export function App() {
         onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
       />
 
-      <header className="corner tl">
+      <header className="corner tl" data-devour>
         <h1>Living Letters</h1>
         <p>A playground for words</p>
       </header>
 
-      <div className="corner tr">
+      <div className="corner tr" data-devour>
         <button type="button" className="chip glass" aria-pressed={sound} onClick={toggleSound}>
           <Icon name={sound ? 'sound' : 'mute'} />
           Sound {sound ? 'on' : 'off'}
@@ -213,11 +243,11 @@ export function App() {
         {coarse ? 'Touch the letters to play. Double-tap to change the word.' : 'Just start typing, or play with the letters.'}
       </p>
 
-      <ul className="corner bl dock glass" aria-live="polite" aria-label="How to play">
+      <ul data-devour className="corner bl dock glass" aria-live="polite" aria-label="How to play">
         {gestures.map((g) => <li key={g}>{g}</li>)}
       </ul>
 
-      <div className="corner br">
+      <div className="corner br" data-devour>
         <button type="button" className="chip glass" onClick={reset}>
           <Icon name="reset" />
           Reset

@@ -121,6 +121,8 @@ export interface World {
   plants: Plants;
   sound: Sound;
   later(ms: number, fn: () => void): void;
+  /** A black hole at full size swallows the interface (a point), or gives it back (null). */
+  devour(at: { x: number; y: number } | null): void;
   hit(x: number, y: number): Letter | null;
   nearestEdge(x: number, y: number, maxPx: number): EdgeHit | null;
   cx(l: Letter): number;

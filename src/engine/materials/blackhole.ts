@@ -25,6 +25,7 @@ interface Hole {
   full: number; // when a held hole reached full size; -1 before
   devoured: boolean; // has it started eating the interface
   quiet: number; // last time it caught or swallowed something
+  size: number; vs: number; // drawn radius (px) and its rate of change: a damped spring toward the target
 }
 
 /** A letter on its way in: a decaying orbit, flattened into the plane of the disk. */
@@ -197,18 +198,18 @@ function diskHalf(ctx: CanvasRenderingContext2D, R: number, t: number, near: boo
 }
 
 /**
- * The hole: the far half of its disk, the lensed rings above and below, the shadow edged by the photon
- * ring, then the near half of the disk crossing in front — everything moving. On dark backgrounds the
- * light adds up; on light ones it is painted normally so it stays visible.
+ * The hole is drawn in two passes around the letters. Behind them: the bloom, the far half of the disk and
+ * the black shadow — so a letter falling in is seen on top of the darkness, inside the hole. In front of
+ * them: the halo — the ring beneath, the far side bent over the top, the photon ring and the near half of
+ * the disk — so the letter passes under the light as it goes in, and again as it comes back out.
+ * On dark backgrounds the light adds up; on light ones it is painted normally so it stays visible.
  */
-function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, tw: number, dark: boolean) {
+function holeBack(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, tw: number, dark: boolean) {
   const op: GlobalCompositeOperation = dark ? 'lighter' : 'source-over';
   ctx.save();
   ctx.translate(h.x, h.y);
   ctx.globalAlpha = tw;
   ctx.lineCap = 'round';
-
-  // bloom, along the disk
   ctx.save();
   ctx.rotate(TILT);
   ctx.scale(2, 1);
@@ -217,9 +218,21 @@ function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, 
   ctx.fillStyle = g;
   ctx.beginPath(); ctx.arc(0, 0, R * 2.6, 0, TAU); ctx.fill();
   ctx.restore();
-
   ctx.rotate(TILT);
   diskHalf(ctx, R, t, false, op);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+function holeFront(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, tw: number, dark: boolean) {
+  const op: GlobalCompositeOperation = dark ? 'lighter' : 'source-over';
+  ctx.save();
+  ctx.translate(h.x, h.y);
+  ctx.globalAlpha = tw;
+  ctx.lineCap = 'round';
+  ctx.rotate(TILT);
   ctx.globalCompositeOperation = op;
   // the ring of light under the shadow (the underside of the disk, lensed)
   haze(ctx, R, 1.4, LOWER.flat, 0.5, 0.05, Math.PI - 0.05, 0.12);
@@ -227,16 +240,10 @@ function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, 
   // the far side of the disk, bent up and over the top of the shadow
   haze(ctx, R, 1.6, ARCH.flat, 0.9, Math.PI, TAU, 0.16);
   streaks(ctx, R, t, ARCH.n, ARCH.r0, ARCH.r1, ARCH.flat, Math.PI, TAU, ARCH.bright, ARCH.seed);
-
-  // the shadow, and the thin photon ring hugging it
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = '#000';
-  ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
-  ctx.globalCompositeOperation = op;
+  // the photon ring hugging the shadow
   ctx.strokeStyle = `rgba(${AMBER},0.85)`;
   ctx.lineWidth = Math.max(1, R * 0.016);
-  ctx.beginPath(); ctx.arc(0, 0, R * 1.0, 0, TAU); ctx.stroke();
-
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.stroke();
   // the near half of the disk crosses in front, hottest where it is closest to the hole on the left
   diskHalf(ctx, R, t, true, op);
   ctx.globalCompositeOperation = op;
@@ -245,6 +252,12 @@ function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, 
   ctx.fillStyle = hot;
   ctx.beginPath(); ctx.ellipse(-R * 1.9, R * 0.04, R * 1.1, R * 0.2, 0, 0, TAU); ctx.fill();
   ctx.restore();
+}
+
+/** How big a hole is drawn right now: its sprung size, shrinking away (eased) as it turns white. */
+function drawnSize(w: World, h: Hole) {
+  const wt = h.white >= 0 ? clamp((w.t - h.white) / WHITE, 0, 1) : 0;
+  return { R: Math.max(0, h.size) * (1 - wt * wt * (3 - 2 * wt)), wt };
 }
 
 export const blackhole: Material = {
@@ -271,10 +284,19 @@ export const blackhole: Material = {
 
     for (const h of holes) {
       h.spin += dt * (2 + h.mass);
+      // its size follows the mass on a spring with a little give: it accelerates, overshoots slightly and
+      // settles, so neither growing nor the last surge before it eats the interface is ever a jump
+      const target = w.fs * (0.075 + 0.045 * h.mass) * (h.devoured ? 1.5 : 1) * 1.25;
+      const steps = Math.max(1, Math.ceil(dt / 0.008));
+      for (let i = 0; i < steps; i++) {
+        const sdt = dt / steps;
+        h.vs += (70 * (target - h.size) - 10.4 * h.vs) * sdt;
+        h.size += h.vs * sdt;
+      }
       h.eaten = h.eaten.filter((l) => w.letters.includes(l));
       if (h.held) {
         h.x = p.x; h.y = p.y;
-        h.mass = Math.min(MAX_MASS, h.mass + dt * 1.1);
+        h.mass = Math.min(MAX_MASS, h.mass + (MAX_MASS + 0.15 - h.mass) * dt * 1.2); // eases out as it fills
         if (h.mass >= MAX_MASS && h.full < 0) h.full = w.t;
         // at full size, after a breath, it starts on the interface
         if (h.full >= 0 && !h.devoured && w.t - h.full > 0.35) {
@@ -380,7 +402,7 @@ export const blackhole: Material = {
 
   down(w) {
     const p = w.p;
-    holes.push({ x: p.x, y: p.y, mass: 0.6, t0: w.t, eaten: [], white: -1, held: true, spin: 0, full: -1, devoured: false, quiet: w.t });
+    holes.push({ x: p.x, y: p.y, mass: 0.6, t0: w.t, eaten: [], white: -1, held: true, spin: 0, full: -1, devoured: false, quiet: w.t, size: 0, vs: 0 });
     w.sound.play('pulse', 0.5);
   },
 
@@ -402,11 +424,19 @@ export const blackhole: Material = {
     return true;
   },
 
+  back(ctx, w, colors) {
+    const dark = colors.bg[0] * 0.3 + colors.bg[1] * 0.59 + colors.bg[2] * 0.11 < 110;
+    for (const h of holes) {
+      const { R, wt } = drawnSize(w, h);
+      if (R >= 1) holeBack(ctx, h, R, h.spin, 1 - wt, dark);
+    }
+  },
+
   front(ctx, w, colors) {
     const dark = colors.bg[0] * 0.3 + colors.bg[1] * 0.59 + colors.bg[2] * 0.11 < 110;
     const fs = w.fs;
     for (const h of holes) {
-      const wt = h.white >= 0 ? clamp((w.t - h.white) / WHITE, 0, 1) : 0;
+      const { R, wt } = drawnSize(w, h);
       if (wt > 0) { // the white hole: a flash that blooms outward
         const g = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, fs * (0.2 + wt * 1.4));
         g.addColorStop(0, `rgba(${HOT},${(1 - wt) * 0.9})`);
@@ -415,10 +445,7 @@ export const blackhole: Material = {
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(h.x, h.y, fs * (0.2 + wt * 1.4), 0, TAU); ctx.fill();
       }
-      const grow = h.held ? 1 : clamp((w.t - h.t0) / 0.25, 0, 1);
-      const R = fs * (0.075 + 0.045 * h.mass) * grow * (1 - wt) * (h.devoured ? 1.5 : 1);
-      if (R < 1) continue;
-      drawHole(ctx, h, R * 1.25, h.spin, 1 - wt, dark);
+      if (R >= 1) holeFront(ctx, h, R, h.spin, 1 - wt, dark);
     }
   },
 };

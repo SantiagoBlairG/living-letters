@@ -33,9 +33,13 @@ interface Fall {
   h: Hole; t0: number; dur: number; r0: number; a0: number; dir: number; rot0: number;
   s: number; // how far the stretching has gone, 0..1
   d: number; // current distance from the letter's pivot to the centre of the hole, px
+  q: number; // how far along the fall, 0..1
 }
 
-const STRIPS = 22;
+const FALL = 1.9; // seconds every fall takes, so letters arrive in the order they were caught, never on top of each other
+const fadeIn = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+const STRIPS = 36;
 
 /**
  * Draws a falling letter in thin strips across its length (its local y axis already points at the hole).
@@ -52,20 +56,62 @@ function strand(ctx: CanvasRenderingContext2D, l: Letter, f: Fall, fs: number, l
   const k = 2.2 * s; // how much more the near part is stretched than the far part
   const map = (v: number) => top + (len * (v + k * v * v)) / (1 + k);
   const thin = Math.max(0.12, Math.min(1, f.d / (fs * 0.6))); // and the whole strand narrows as it goes in
+  const whole = 1 - fadeIn(0.55, 1, f.q);
+  if (whole < 0.01) return;
+
+  // The strips are drawn solid on a layer of their own (so the seams between them never show), then the
+  // layer is faded along the strand with one smooth gradient — the tip first, as it reaches the light
+  // around the hole — and laid onto the stage, the whole of it fading as the fall ends.
+  const c = ctx.canvas;
+  if (!layer) layer = document.createElement('canvas');
+  if (layer.width !== c.width || layer.height !== c.height) { layer.width = c.width; layer.height = c.height; }
+  // only the patch of the layer the strand covers is cleared, faded and copied
+  const m = ctx.getTransform();
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const [px, py] of [[-fs, top - 2], [fs, top - 2], [-fs, top + len + 2], [fs, top + len + 2]]) {
+    const X = m.a * px + m.c * py + m.e, Y = m.b * px + m.d * py + m.f;
+    x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y);
+  }
+  const bx = Math.max(0, Math.floor(x0)), by = Math.max(0, Math.floor(y0));
+  const bw = Math.min(c.width, Math.ceil(x1)) - bx, bh = Math.min(c.height, Math.ceil(y1)) - by;
+  if (bw <= 0 || bh <= 0) return;
+  const g2 = layer.getContext('2d')!;
+  g2.setTransform(1, 0, 0, 1, 0, 0);
+  g2.globalCompositeOperation = 'source-over';
+  g2.clearRect(bx, by, bw, bh);
+  g2.setTransform(m);
+  g2.font = ctx.font; g2.textBaseline = ctx.textBaseline; g2.fillStyle = ctx.fillStyle;
   for (let i = 0; i < STRIPS; i++) {
-    const v0 = i / STRIPS, v1 = (i + 1) / STRIPS;
+    const v0 = i / STRIPS, v1 = (i + 1) / STRIPS, vm = (v0 + v1) / 2;
     const a = yt + (yb - yt) * v0, b = yt + (yb - yt) * v1;
     const a2 = map(v0), b2 = map(v1);
     const sy = (b2 - a2) / (b - a);
-    const sx = (1 - 0.3 * s) * (1 - ((v0 + v1) / 2) * 0.9 * s) * (s > 0 ? thin : 1);
-    ctx.save();
-    ctx.translate(0, a2 - a * sy);
-    ctx.scale(sx, sy);
-    ctx.beginPath(); ctx.rect(-fs * 2, a - 0.6 / sy, fs * 4, b - a + 1.2 / sy); ctx.clip();
-    ctx.fillText(l.ch, -l.adv / 2, liftPx);
-    ctx.restore();
+    const sx = (1 - 0.3 * s) * (1 - vm * 0.9 * s) * (s > 0 ? thin : 1);
+    g2.save();
+    g2.translate(0, a2 - a * sy);
+    g2.scale(sx, sy);
+    g2.beginPath(); g2.rect(-fs * 2, a - 0.6 / sy, fs * 4, b - a + 1.2 / sy); g2.clip();
+    g2.fillText(l.ch, -l.adv / 2, liftPx);
+    g2.restore();
   }
+  const mid = clamp((map(0.35) - top) / len, 0, 0.99);
+  const gr = g2.createLinearGradient(0, top, 0, top + len);
+  gr.addColorStop(0, 'rgba(0,0,0,1)');
+  gr.addColorStop(mid, 'rgba(0,0,0,1)');
+  gr.addColorStop(1, `rgba(0,0,0,${1 - 0.95 * s})`);
+  g2.globalCompositeOperation = 'destination-in';
+  g2.fillStyle = gr;
+  g2.fillRect(-fs * 3, top - fs, fs * 6, len + fs * 2);
+  g2.globalCompositeOperation = 'source-over';
+
+  const a0 = ctx.globalAlpha;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = a0 * whole;
+  ctx.drawImage(layer, bx, by, bw, bh, bx, by, bw, bh);
+  ctx.restore();
 }
+let layer: HTMLCanvasElement | null = null;
 
 const holes: Hole[] = [];
 const falls = new Map<Letter, Fall>();
@@ -128,50 +174,58 @@ function streaks(ctx: CanvasRenderingContext2D, R: number, t: number, r0: number
   ctx.setLineDash([]);
 }
 
-const TILT = -0.18; // the disk rises to the right
-const FLAT = 0.17; // how edge-on we see it
+const TILT = -0.4; // the disk rises to the right, like the icon
+
+// The disk's outline: a crescent between an outer ellipse and an inner one lifted toward the back,
+// so it is thick where it passes in front, thin behind, and comes to points at both ends.
+const OUT_RX = 2.75, OUT_RY = 0.66, IN_RX = 2.6, IN_RY = 0.44, IN_LIFT = 0.15;
+
+function crescent(ctx: CanvasRenderingContext2D, R: number) {
+  ctx.beginPath();
+  ctx.ellipse(0, 0, R * OUT_RX, R * OUT_RY, 0, 0, TAU);
+  ctx.ellipse(0, -R * IN_LIFT, R * IN_RX, R * IN_RY, 0, TAU, 0, true);
+}
 
 /**
- * The accretion disk: a flat ring of light around the hole, seen almost edge-on, so it is drawn as an
- * elliptical ring. Only one half is drawn per call: the far half goes behind the shadow, the near half
- * crosses in front of it — one object wrapping around the hole, not a stripe laid on top.
+ * The accretion disk, seen nearly edge-on: a crescent of light wrapped round the hole. Only one half is
+ * drawn per call — the far half goes behind the shadow, the near half crosses in front of it — so it reads
+ * as one object around the hole, not a stripe laid on top.
  */
 function disk(ctx: CanvasRenderingContext2D, R: number, t: number, near: boolean) {
-  const r0 = R * 1.3, r1 = R * 3.4;
+  const L = R * OUT_RX;
   ctx.save();
   ctx.rotate(TILT);
   ctx.beginPath();
-  if (near) ctx.rect(-r1 * 1.2, 0, r1 * 2.4, r1); else ctx.rect(-r1 * 1.2, -r1, r1 * 2.4, r1);
+  if (near) ctx.rect(-L * 1.2, 0, L * 2.4, L); else ctx.rect(-L * 1.2, -L, L * 2.4, L);
   ctx.clip();
-  ctx.scale(1, FLAT);
-  ctx.beginPath();
-  ctx.arc(0, 0, r1, 0, TAU); ctx.arc(0, 0, r0, TAU, 0, true);
-  const g = ctx.createRadialGradient(0, 0, r0, 0, 0, r1);
-  g.addColorStop(0, `rgba(${HOT},1)`);
-  g.addColorStop(0.15, `rgba(${AMBER},0.95)`);
-  g.addColorStop(0.45, `rgba(${ORANGE},0.6)`);
-  g.addColorStop(0.75, `rgba(${RED},0.25)`);
+  crescent(ctx, R);
+  // white-hot in the middle, cooling to red and fading out at the points; brighter on the side coming toward us
+  const g = ctx.createLinearGradient(-L, 0, L, 0);
+  g.addColorStop(0, `rgba(${RED},0)`);
+  g.addColorStop(0.12, `rgba(${ORANGE},0.7)`);
+  g.addColorStop(0.32, `rgba(${HOT},1)`);
+  g.addColorStop(0.52, `rgba(${HOT},0.95)`);
+  g.addColorStop(0.72, `rgba(${AMBER},0.8)`);
+  g.addColorStop(0.9, `rgba(${ORANGE},0.4)`);
   g.addColorStop(1, `rgba(${RED},0)`);
   ctx.fillStyle = g;
   ctx.fill();
-  // the side turning toward us is brighter
-  ctx.globalCompositeOperation = 'lighter';
-  const d = ctx.createLinearGradient(-r1, 0, r1, 0);
-  d.addColorStop(0, `rgba(${HOT},0.45)`); d.addColorStop(0.45, `rgba(${HOT},0.1)`); d.addColorStop(1, `rgba(${HOT},0)`);
-  ctx.fillStyle = d;
-  ctx.fill();
-  ctx.globalCompositeOperation = 'source-over';
-  // matter streaming round
+  // matter streaming round inside it
+  ctx.save();
+  ctx.clip();
   ctx.shadowBlur = 0;
-  ctx.lineWidth = R * 0.05;
-  for (let i = 0; i < 7; i++) {
-    const r = r0 + ((r1 - r0) * (i + 0.5)) / 7;
-    ctx.strokeStyle = `rgba(${i % 2 ? HOT : AMBER},${0.35 * (1 - i / 8)})`;
-    ctx.setLineDash([r * 0.5, r * 0.18]);
-    ctx.lineDashOffset = -t * R * (3 - i * 0.3);
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke();
+  ctx.lineWidth = Math.max(0.8, R * 0.025);
+  for (let i = 0; i < 5; i++) {
+    const k = i / 4;
+    ctx.strokeStyle = `rgba(${i % 2 ? ORANGE : HOT},0.45)`;
+    ctx.setLineDash([R * (0.7 + k * 0.3), R * 0.22]);
+    ctx.lineDashOffset = -t * R * (3 - k);
+    ctx.beginPath();
+    ctx.ellipse(0, -R * IN_LIFT * (1 - k) * 0.6, R * (IN_RX + (OUT_RX - IN_RX) * k), R * (IN_RY + (OUT_RY - IN_RY) * (0.3 + 0.7 * k)), 0, 0, TAU);
+    ctx.stroke();
   }
   ctx.setLineDash([]);
+  ctx.restore();
   ctx.restore();
 }
 
@@ -295,10 +349,10 @@ export const blackhole: Material = {
         l.rot = angleTo(f.rot0, Math.atan2(-ux, uy), s);
         l.vr = 0;
         // the stretching itself is drawn in drawLetter: it is not a plain scale but a taper toward the hole
-        f.s = s; f.d = Math.hypot(ux, uy);
+        f.s = s; f.d = Math.hypot(ux, uy); f.q = q;
         l.skT = 0;
         l.heatT = Math.max(l.heatT, s * 0.8);
-        l.fade = q > 0.9 ? (q - 0.9) / 0.1 : 0; // by then the tip is already under the shadow
+        l.fade = 0; // the strand fades itself, strip by strip
         if (q >= 1) {
           falls.delete(l);
           h.eaten.push(l); h.quiet = w.t;
@@ -316,8 +370,8 @@ export const blackhole: Material = {
         const d = Math.hypot(cx - h.x, cy - h.y);
         if (d > reach(w, h, M)) continue;
         falls.set(l, {
-          h, t0: w.t, dur: 1.5 + Math.min(1.4, (d / fs) * 0.5), r0: Math.max(d, fs * 0.05),
-          a0: Math.atan2(cy - h.y, cx - h.x), dir: 1, rot0: l.rot, s: 0, d,
+          h, t0: w.t, dur: FALL, r0: Math.max(d, fs * 0.05),
+          a0: Math.atan2(cy - h.y, cx - h.x), dir: 1, rot0: l.rot, s: 0, d, q: 0,
         });
         h.quiet = w.t;
         w.sound.play('pulse', 0.35);

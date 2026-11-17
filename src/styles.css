@@ -375,7 +375,7 @@ kbd {
   65% {
     transform: translate(calc(var(--dx) * 0.7 + var(--ox) * 0.25), calc(var(--dy) * 0.7 + var(--oy) * 0.25))
       rotate(var(--ang)) perspective(500px) rotateY(calc(var(--side) * 52deg)) scale(1.8, 0.45);
-    opacity: 1; filter: blur(0.5px);
+    opacity: 0.6; filter: blur(1px);
   }
   100% {
     transform: translate(var(--dx), var(--dy)) rotate(var(--ang)) perspective(500px) rotateY(calc(var(--side) * 72deg)) scale(0.5, 0.04);
@@ -395,7 +395,7 @@ kbd {
   65% {
     transform: translate(calc(var(--dx) * 0.7 + var(--ox) * 0.25), calc(var(--dy) * 0.7 + var(--oy) * 0.25))
       rotate(var(--ang)) perspective(500px) rotateY(calc(var(--side) * 52deg)) scale(1.8, 0.45);
-    opacity: 1; filter: blur(0.5px);
+    opacity: 0.6; filter: blur(1px);
   }
   100% {
     transform: translate(var(--dx), var(--dy)) rotate(var(--ang)) perspective(500px) rotateY(calc(var(--side) * 72deg)) scale(0.5, 0.04);

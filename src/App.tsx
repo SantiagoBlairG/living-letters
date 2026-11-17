@@ -40,7 +40,7 @@ function devour(app: HTMLDivElement | null, at: { x: number; y: number } | null,
     el.style.setProperty('--side', String(side));
     // a curved path: halfway there, it has swung out to the side, as if orbiting on the way in
     el.style.setProperty('--ox', -dy * 0.35 + 'px'); el.style.setProperty('--oy', dx * 0.35 + 'px');
-    el.style.setProperty('--delay', i * 0.09 + 's');
+    el.style.setProperty('--delay', i * 0.14 + 's'); // one after another, so they never pile up at the centre
   });
   app.dataset.devour = 'in';
 }

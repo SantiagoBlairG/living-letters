@@ -1,5 +1,5 @@
-import { FONTS, MATERIALS, MAX_CHARS, PALETTES, SUGGESTIONS, TUNES } from '../engine/config';
-import type { CustomColors, MaterialId, Settings } from '../engine/types';
+import { ELEMENTS, FONTS, MATERIALS, MAX_CHARS, PALETTES, SUGGESTIONS, TUNES } from '../engine/config';
+import type { CustomColors, ElementId, MaterialId, Settings } from '../engine/types';
 import { cleanWord } from '../App';
 import { Icon } from './Icon';
 
@@ -25,6 +25,8 @@ function Glyph({ id }: { id: MaterialId }) {
       {id === 'melt' && (<path d="M6 6h20v7c0 2-1.5 2-1.5 4.5s-3.2 2.5-3.2 0V15c0-2-3-2-3 0v8c0 3.2-3.6 3.2-3.6 0v-5.5c0-2-3-2-3 0v.5c0 2.2-3.7 2.2-3.7 0z" fill="currentColor" stroke="none" />)}
       {id === 'explode' && (<><path d="M16 3v6M16 23v6M3 16h6M23 16h6M7 7l4 4M25 25l-4-4M25 7l-4 4M7 25l4-4" /><circle cx="16" cy="16" r="2.6" fill="currentColor" stroke="none" /></>)}
       {id === 'gravity' && (<><path d="M16 5v13M10.5 13l5.5 5.5 5.5-5.5" strokeLinejoin="round" /><path d="M6 26h20" /></>)}
+      {id === 'blackhole' && (<><ellipse cx="16" cy="16" rx="13" ry="4.5" transform="rotate(-15 16 16)" /><circle cx="16" cy="16" r="5.5" fill="currentColor" stroke="none" /></>)}
+      {id === 'elements' && (<g stroke="none" fill="currentColor"><path d="M10 4c3 3 4 6 1.5 9.5C9.5 11 9 9 10 4Z" /><path d="M22 4c4 4 4 9 0 11-4-2-4-7 0-11Z" opacity=".55" /><path d="M4 27l6-9 4 5 3-3 6 7Z" opacity=".55" /><path d="M21 19c1.5 2.4 3 4.2 3 5.8a3 3 0 0 1-6 0c0-1.6 1.5-3.4 3-5.8Z" /></g>)}
       {id === 'float' && (<><circle cx="21" cy="11" r="3.4" fill="currentColor" stroke="none" /><path d="M17 15C12 19 8 21 4 26M19 18c-3 3-5 5-7 8" opacity=".7" /></>)}
     </svg>
   );
@@ -93,6 +95,17 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
             ))}
           </div>
           <p className="m-desc" aria-live="polite"><strong>{current.label}</strong>{current.note}</p>
+          {settings.material === 'elements' && (
+            <div className="elements" role="radiogroup" aria-label="Element">
+              {ELEMENTS.map((e) => (
+                <button key={e.id} type="button" role="radio" aria-checked={settings.element === e.id} onClick={() => onChange({ element: e.id })}>
+                  <ElementIcon id={e.id} />
+                  <span>{e.label}</span>
+                </button>
+              ))}
+              <span className="dim small only-wide">Switch with the mouse wheel or <kbd>↑</kbd><kbd>↓</kbd></span>
+            </div>
+          )}
         </section>
 
         <section className="sliders">
@@ -174,5 +187,16 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
       <span>{label}</span>
     </label>
+  );
+}
+
+function ElementIcon({ id }: { id: ElementId }) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+      {id === 'fire' && <path stroke="none" d="M12 2c4 4 6 7.5 6 11a6 6 0 0 1-12 0c0-2.5 1.2-4.5 3-6 0 2 1 3.2 2.2 3.6C10.6 7.8 11 5 12 2Z" />}
+      {id === 'air' && <g fill="none"><path d="M3 9h11a3 3 0 1 0-3-3" /><path d="M3 14h15a3 3 0 1 1-3 3" /><path d="M3 19h6" /></g>}
+      {id === 'earth' && <path stroke="none" d="M2 20 9 8l4 6 3-4 6 10Z" />}
+      {id === 'water' && <path stroke="none" d="M12 3c3 4.5 6 8 6 11.5a6 6 0 0 1-12 0C6 11 9 7.5 12 3Z" />}
+    </svg>
   );
 }

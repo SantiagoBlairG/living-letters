@@ -40,10 +40,11 @@ export function renderScene(ctx: CanvasRenderingContext2D, st: Stage, scale: num
   ctx.textBaseline = 'alphabetic';
   const hasPlants = st.plants.count > 0;
   for (const l of st.letters) {
-    if (!l.glyph || l.alpha < 0.01) continue;
+    const alpha = Math.min(1, l.alpha) * (1 - l.fade);
+    if (!l.glyph || alpha < 0.01) continue;
     const m = l.m;
     ctx.setTransform(m[0] * scale, m[1] * scale, m[2] * scale, m[3] * scale, m[4] * scale, m[5] * scale);
-    ctx.globalAlpha = Math.min(1, l.alpha);
+    ctx.globalAlpha = alpha;
     if (hasPlants) st.plants.draw(ctx, l, false, c, st.fs, liftPx, st.t, st.amb, st.speed);
     ctx.fillStyle = css(l.heat > 0.01 ? mix(c.ink, accent, Math.min(1, l.heat) * 0.85) : c.ink);
     if (!mat.drawLetter?.(ctx, l, st, c, liftPx)) ctx.fillText(l.ch, -l.adv / 2, liftPx);

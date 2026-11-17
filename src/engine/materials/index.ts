@@ -9,5 +9,7 @@ import { wave } from './wave';
 import { explode } from './explode';
 import { sand } from './sand';
 import { melt } from './melt';
+import { blackhole } from './blackhole';
+import { elements } from './elements';
 
-export const BEHAVIORS: Record<MaterialId, Material> = { jelly, magnet, bloom, float, gravity, balloon, wave, explode, sand, melt };
+export const BEHAVIORS: Record<MaterialId, Material> = { jelly, magnet, bloom, float, gravity, balloon, wave, explode, sand, melt, blackhole, elements };

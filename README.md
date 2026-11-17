@@ -2,7 +2,7 @@
 
 A playground for words. Type a word, pick a material, and touch the letters.
 
-Ten materials, each with its own physics, cursor and sound:
+Twelve materials, each with its own physics, cursor and sound:
 
 | Material | Hover | Click | Drag |
 | --- | --- | --- | --- |
@@ -15,6 +15,8 @@ Ten materials, each with its own physics, cursor and sound:
 | Shatter | cracks spread from the pointer until the letter gives | breaks the letter into shards that fly back together | hold anywhere to charge a blast that shatters everything in reach |
 | Sand | the letter fades into grains that loosen from the surface inward and blow away | a dust cloud | cuts a furrow through the grains |
 | Melt | the letter drips from where you touch | a splash that sets the letters running | hold a letter and it pours into a puddle; drag to paint with it |
+| Black hole | bends and stretches the letters toward the pointer | leaves a hole that swallows letters, then spits them back out as a white hole | hold to grow a hole under the hand; let go to release everything |
+| Elements | fire sets letters alight · air makes them flutter · earth turns them to stone · water rains on them | fireball · tornado · earthquake · downpour | trail of fire · gust · cracks · moves the storm |
 | Gravity | the pointer is a ball that shoves letters | flips gravity (on a letter: kicks it) | pick a letter up and throw it |
 
 ## Run it
@@ -39,7 +41,7 @@ Node 20+ is enough. There is no backend.
 Just type: any key writes straight onto the stage, with a caret after the last letter, whether the panel is open or not.
 On touch screens, double-tap empty stage to edit the word.
 
-`Esc` hide/show the controls · `←` `→` switch material · `Enter` reset the scene.
+`Esc` hide/show the controls · `←` `→` switch material · `↑` `↓` or the mouse wheel switch element (Elements) · `Enter` reset the scene.
 Text fields in the panel keep their own keys.
 
 ## How it is put together
@@ -51,7 +53,7 @@ src/
     stage.ts              the single requestAnimationFrame loop, pointer input, the "world"
     layout.ts             word sizing, kerned glyph positions, glyph alpha masks + outline points
     simulation.ts         damped springs per letter (position, rotation, scale, skew), delta time
-    materials/            jelly, balloon, magnet, bloom, float, wave, gravity, explode, sand, melt — one behaviour each (gravity runs its own rigid-body step)
+    materials/            jelly, balloon, magnet, bloom, float, wave, gravity, explode, sand, melt, blackhole, elements — one behaviour each (gravity runs its own rigid-body step)
     plants.ts             Bloom's vector garden, anchored to glyph silhouettes
     effects.ts            rings, pulses, gusts, bursts
     cursor.ts             the four drawn cursors

@@ -1,4 +1,4 @@
-import type { Ambient, EdgeHit, Letter, MaterialId, Pointer, Settings, World } from './types';
+import type { Ambient, EdgeHit, ElementId, Letter, MaterialId, Pointer, Settings, World } from './types';
 import { FONTS, resolvePalette } from './config';
 import { LiveColors, css } from './color';
 import { clearGlyphs, fontOf, getGlyph, inGlyph, layoutWord, setFace } from './layout';
@@ -15,6 +15,8 @@ export interface StageEvents {
   /** two quick taps on empty stage */
   onEmptyDoubleTap?(x: number, y: number): void;
   onInteract?(): void;
+  /** the mouse wheel over the stage, in pixels (positive = down) */
+  onWheel?(dy: number): void;
 }
 
 /** Owns the canvas, the single animation loop, pointer input and the world the materials act on. */
@@ -24,6 +26,7 @@ export class Stage implements World {
   inten = 1; amb = 1; speed = 1; tune = 0.5;
   lift = 0;
   material: MaterialId;
+  element: ElementId = 'fire';
   p: Pointer = {
     x: -999, y: -999, lx: -999, ly: -999, vx: 0, vy: 0, speed: 0, inside: false, touch: false,
     down: false, held: 0, downX: 0, downY: 0, travel: 0, grab: null, near: 0, active: false,
@@ -57,9 +60,11 @@ export class Stage implements World {
     this.settings = { ...settings };
     this.useFace(settings.font);
     this.material = settings.material;
+    this.element = settings.element;
     this.lift = BEHAVIORS[this.material].spring.lift;
     this.colors = new LiveColors(this.palette());
     this.cursor = new CursorView(this.material);
+    this.cursor.element = this.element;
     this.reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.applyDials();
 
@@ -69,6 +74,7 @@ export class Stage implements World {
     canvas.addEventListener('pointercancel', this.onCancel);
     canvas.addEventListener('pointerleave', this.onLeave);
     canvas.addEventListener('contextmenu', this.prevent);
+    canvas.addEventListener('wheel', this.onWheel, { passive: true });
     document.addEventListener('visibilitychange', this.onVisibility);
     this.reduce.addEventListener('change', this.applyDials);
     this.ro = new ResizeObserver(() => this.resize());
@@ -97,6 +103,7 @@ export class Stage implements World {
     this.settings = { ...next };
     if (next.palette !== prev.palette || next.custom !== prev.custom) this.colors.set(this.palette());
     if (next.font !== prev.font) this.changeFont(next.font);
+    if (next.element !== prev.element) { this.element = next.element; this.cursor.element = next.element; }
     if (next.material !== prev.material) {
       // leave the old material cleanly: no leftover grabs, queued impulses or momentum
       this.p.grab = null; this.timers = [];
@@ -107,6 +114,7 @@ export class Stage implements World {
         // take the short way round when the springs turn them upright again
         for (const l of this.letters) l.rot = Math.atan2(Math.sin(l.rot), Math.cos(l.rot));
       }
+      for (const l of this.letters) l.fade = 0;
       this.material = next.material;
       this.cursor.setMaterial(next.material);
       BEHAVIORS[next.material].enter?.(this);
@@ -164,6 +172,7 @@ export class Stage implements World {
     c.removeEventListener('pointercancel', this.onCancel);
     c.removeEventListener('pointerleave', this.onLeave);
     c.removeEventListener('contextmenu', this.prevent);
+    c.removeEventListener('wheel', this.onWheel);
     document.removeEventListener('visibilitychange', this.onVisibility);
     this.reduce.removeEventListener('change', this.applyDials);
     this.ro.disconnect();
@@ -376,6 +385,7 @@ export class Stage implements World {
   };
 
   private prevent = (e: Event) => e.preventDefault();
+  private onWheel = (e: WheelEvent) => this.events.onWheel?.(e.deltaY);
 
   private locate(e: PointerEvent) {
     const r = this.canvas.getBoundingClientRect();

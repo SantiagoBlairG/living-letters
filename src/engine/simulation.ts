@@ -13,7 +13,7 @@ export function makeLetter(ch: string, index: number): Letter {
     ox: 0, oy: 0, vx: 0, vy: 0, rot: 0, vr: 0,
     sx: 1, vsx: 0, sy: 1, vsy: 0, sk: 0, vsk: 0,
     fx: 0, fy: 0, tx: 0, ty: 0, rT: 0, sxT: 1, syT: 1, skT: 0, kMul: 1,
-    heat: 0, heatT: 0, alpha: 1, delay: 0,
+    heat: 0, heatT: 0, alpha: 1, fade: 0, delay: 0,
     phase: Math.random() * Math.PI * 2, phase2: Math.random() * Math.PI * 2,
     m: [1, 0, 0, 1, 0, 0],
   };

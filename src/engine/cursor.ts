@@ -1,4 +1,4 @@
-import type { ColorKey, MaterialId, Pointer } from './types';
+import type { ColorKey, ElementId, MaterialId, Pointer } from './types';
 import { css, type RGB } from './color';
 
 /**
@@ -13,6 +13,7 @@ export class CursorView {
   press = 0; private pv = 0;
   near = 0; vis = 0; spin = 0;
   mat: MaterialId; private prev: MaterialId; private sw = 1;
+  element: ElementId = 'fire';
   private trail: { x: number; y: number; age: number }[] = [];
 
   constructor(mat: MaterialId) { this.mat = mat; this.prev = mat; }
@@ -119,6 +120,38 @@ export class CursorView {
       ctx.arc(0, 2 * k, 6 * k, 0, Math.PI);
       ctx.bezierCurveTo(-6 * k, -1 * k, -3 * k, -5 * k, 0, -10 * k);
       ctx.fill();
+    } else if (mat === 'blackhole') {
+      // a tiny hole with its disk; it hides while a real one grows under the hand
+      if (press < 0.6) {
+        const k = 1 - Math.max(0, press);
+        ctx.strokeStyle = css(colors.spark, 0.9 * k); ctx.lineWidth = 1.6;
+        ctx.setLineDash([5, 3]); ctx.lineDashOffset = -this.spin * 8;
+        ctx.beginPath(); ctx.ellipse(0, 0, 13, 4.5, -0.25, 0, 6.2832); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath(); ctx.arc(0, 0, 5.5, 0, 6.2832);
+        ctx.fillStyle = css(colors.bg); ctx.fill();
+        ctx.strokeStyle = css(colors.spark, k); ctx.lineWidth = 1.2; ctx.stroke();
+      }
+    } else if (mat === 'elements') {
+      const el = this.element;
+      if (el === 'fire') { // a flame
+        ctx.fillStyle = '#ff8a1f';
+        ctx.beginPath(); ctx.moveTo(0, -12); ctx.bezierCurveTo(7, -4, 8, 3, 0, 8); ctx.bezierCurveTo(-8, 3, -6, -3, 0, -12); ctx.fill();
+        ctx.fillStyle = '#ffd54a';
+        ctx.beginPath(); ctx.moveTo(0, -4); ctx.bezierCurveTo(3.5, 0, 4, 3, 0, 6); ctx.bezierCurveTo(-4, 3, -3, 0, 0, -4); ctx.fill();
+      } else if (el === 'air') { // two turning wisps
+        ctx.strokeStyle = css(colors.ink); ctx.lineWidth = 1.6;
+        for (let i = 0; i < 2; i++) {
+          const a = this.spin * 1.5 + i * Math.PI;
+          ctx.beginPath(); ctx.arc(0, 0, 10 - i * 4, a, a + 2.4); ctx.stroke();
+        }
+      } else if (el === 'earth') { // a rock
+        ctx.fillStyle = css(colors.ink, 0.75);
+        ctx.beginPath(); ctx.moveTo(-8, 3); ctx.lineTo(-5, -5); ctx.lineTo(3, -7); ctx.lineTo(9, -1); ctx.lineTo(6, 6); ctx.lineTo(-4, 7); ctx.closePath(); ctx.fill();
+      } else { // a drop under the cloud
+        ctx.fillStyle = css(colors.stem);
+        ctx.beginPath(); ctx.moveTo(0, -7); ctx.bezierCurveTo(4, -2, 5, 1, 5, 3); ctx.arc(0, 3, 5, 0, Math.PI); ctx.bezierCurveTo(-5, 1, -4, -2, 0, -7); ctx.fill();
+      }
     } else if (mat === 'sand') {
       // a few grains that spread apart as the hand speeds up
       const spread = 3.5 + Math.min(speed * 0.006, 7) + press * 3;

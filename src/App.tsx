@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { DEFAULT_CUSTOM, MATERIALS, MAX_CHARS, PRESETS, resolvePalette } from './engine/config';
+import { DEFAULT_CUSTOM, ELEMENTS, MATERIALS, MAX_CHARS, PRESETS, resolvePalette } from './engine/config';
 import { Stage } from './engine/stage';
 import { fileName, savePng } from './engine/exporter';
 import type { Settings } from './engine/types';
@@ -9,7 +9,12 @@ import { Icon } from './ui/Icon';
 
 const INITIAL: Settings = {
   word: 'hello', material: 'jelly', intensity: 0.5, motion: 0.5, palette: 'night',
-  custom: DEFAULT_CUSTOM, font: 'serif', tune: {},
+  custom: DEFAULT_CUSTOM, font: 'serif', tune: {}, element: 'fire',
+};
+
+const nextElement = (id: string, dir: number) => {
+  const i = ELEMENTS.findIndex((e) => e.id === id);
+  return ELEMENTS[(i + dir + ELEMENTS.length) % ELEMENTS.length].id;
 };
 
 export const cleanWord = (v: string) =>
@@ -33,6 +38,7 @@ export function App() {
   const [editor, setEditor] = useState<{ x: number; y: number } | null>(null);
   const [exporting, setExporting] = useState<ExportState>('idle');
   const coarseRef = useRef(coarse);
+  const wheelAcc = useRef(0);
   coarseRef.current = coarse;
 
   const patch = useCallback((p: Partial<Settings>) => setSettings((s) => ({ ...s, ...p })), []);
@@ -52,6 +58,14 @@ export function App() {
       onInteract: () => setHint(false),
       // touch has no keyboard until a field is focused, so it gets a small editor; a mouse just gets the caret
       onEmptyDoubleTap: (x, y) => { if (coarseRef.current) setEditor({ x, y }); else focusStageText(); },
+      // the wheel switches element while Elements is the material
+      onWheel: (dy) => {
+        wheelAcc.current += dy;
+        if (Math.abs(wheelAcc.current) < 60) return;
+        const dir = wheelAcc.current > 0 ? 1 : -1;
+        wheelAcc.current = 0;
+        setSettings((s) => (s.material === 'elements' ? { ...s, element: nextElement(s.element, dir) } : s));
+      },
     });
     stageRef.current = stage;
     return () => { stage.destroy(); stageRef.current = null; };
@@ -113,6 +127,10 @@ export function App() {
     else if (key === 'ArrowRight') cycleMaterial(1);
     else if (key === 'ArrowLeft') cycleMaterial(-1);
     else if (key === 'Enter') reset();
+    else if (key === 'ArrowUp' || key === 'ArrowDown') {
+      const dir = key === 'ArrowDown' ? 1 : -1;
+      setSettings((s) => (s.material === 'elements' ? { ...s, element: nextElement(s.element, dir) } : s));
+    }
     else return false;
     return true;
   }, [cycleMaterial, reset]);
@@ -148,7 +166,9 @@ export function App() {
 
   const word = settings.word.trim();
   const exportLabel = { idle: 'Export PNG', working: 'Rendering…', saved: 'Saved', failed: 'Export failed' }[exporting];
-  const gestures = [coarse ? 'Double-tap to edit' : 'Type to rewrite', ...(coarse ? material.touchHelp : material.help).split(' · ')];
+  const element = ELEMENTS.find((e) => e.id === settings.element) ?? ELEMENTS[0];
+  const help = settings.material === 'elements' ? (coarse ? element.touchHelp : element.help) : coarse ? material.touchHelp : material.help;
+  const gestures = [coarse ? 'Double-tap to edit' : 'Type to rewrite', ...help.split(' · ')];
 
   return (
     <div className="app" style={vars} data-panel={panelOpen ? 'open' : 'closed'}>

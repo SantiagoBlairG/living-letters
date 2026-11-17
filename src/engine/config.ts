@@ -1,4 +1,4 @@
-import type { CustomColors, MaterialId, Palette, Settings } from './types';
+import type { CustomColors, ElementId, MaterialId, Palette, Settings } from './types';
 import { mixHex } from './color';
 
 export const SERIF = '"Gloock", "Bodoni 72", "Didot", "Playfair Display", Georgia, "Times New Roman", serif';
@@ -97,6 +97,23 @@ export const MATERIALS: MaterialInfo[] = [
     help: 'Hover to melt · Click to splash · Hold a letter to pour it, drag to paint',
     touchHelp: 'Tap to splash · Hold a letter to pour it, drag to paint',
   },
+  {
+    id: 'blackhole', label: 'Black hole', note: 'Swallows letters, spits them back',
+    help: 'Hover to bend · Click to leave a hole · Hold to grow one, let go to release',
+    touchHelp: 'Tap to leave a hole · Hold to grow one, let go to release',
+  },
+  {
+    id: 'elements', label: 'Elements', note: 'Fire, air, earth and water',
+    help: '', touchHelp: '', // each element has its own; see ELEMENTS
+  },
+];
+
+/** The four elements of the Elements material, each with its own gestures. */
+export const ELEMENTS: { id: ElementId; label: string; help: string; touchHelp: string }[] = [
+  { id: 'fire', label: 'Fire', help: 'Hover to set alight · Click for a fireball · Drag to leave fire behind', touchHelp: 'Touch to set alight · Tap for a fireball · Drag to leave fire behind' },
+  { id: 'air', label: 'Air', help: 'Hover to make them flutter · Click for a tornado · Drag for a gust', touchHelp: 'Swipe to make them flutter · Tap for a tornado · Drag for a gust' },
+  { id: 'earth', label: 'Earth', help: 'Hover to turn to stone · Click for an earthquake · Drag to crack', touchHelp: 'Touch to turn to stone · Tap for an earthquake · Drag to crack' },
+  { id: 'water', label: 'Water', help: 'The cloud rains where you go · Click for a downpour · Drag to move the storm', touchHelp: 'Touch to rain · Tap for a downpour · Drag to move the storm' },
 ];
 
 /** Each material's own dial, shown under Intensity and Motion. */
@@ -111,6 +128,8 @@ export const TUNES: Record<MaterialId, { label: string; hint: string }> = {
   explode: { label: 'Shards', hint: 'How many pieces a letter breaks into' },
   sand: { label: 'Grain size', hint: 'From fine dust to coarse sand' },
   melt: { label: 'Flow', hint: 'How runny the liquid is' },
+  blackhole: { label: 'Mass', hint: 'How strongly the holes pull' },
+  elements: { label: 'Strength', hint: 'How fierce the element is' },
 };
 
 export const SUGGESTIONS = ['hello', 'jelly', 'bloom', 'float', 'chaos'];
@@ -145,4 +164,8 @@ export const PRESETS: { word: string; material: MaterialId; palette: string }[] 
   { word: 'melt', material: 'melt', palette: 'ember' },
   { word: 'honey', material: 'melt', palette: 'paper' },
   { word: 'drip', material: 'melt', palette: 'night' },
+  { word: 'void', material: 'blackhole', palette: 'night' },
+  { word: 'cosmos', material: 'blackhole', palette: 'cobalt' },
+  { word: 'storm', material: 'elements', palette: 'night' },
+  { word: 'fuego', material: 'elements', palette: 'ember' },
 ];

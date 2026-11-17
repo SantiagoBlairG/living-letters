@@ -4,7 +4,8 @@ import type { Plants } from './plants';
 import type { Sound } from './audio';
 import type { RGB } from './color';
 
-export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity' | 'balloon' | 'wave' | 'explode' | 'sand' | 'melt';
+export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity' | 'balloon' | 'wave' | 'explode' | 'sand' | 'melt' | 'blackhole' | 'elements';
+export type ElementId = 'fire' | 'air' | 'earth' | 'water';
 export type ColorKey = 'bg' | 'bg2' | 'ink' | 'stem' | 'flower' | 'spark';
 
 export interface Palette {
@@ -35,6 +36,7 @@ export interface Settings {
   palette: string; // a preset id, or 'custom'
   custom: CustomColors;
   font: string;
+  element: ElementId; // for the Elements material
   /** each material's own dial, 0..1; 0.5 is neutral */
   tune: Partial<Record<MaterialId, number>>;
 }
@@ -60,6 +62,7 @@ export interface Letter {
   heat: number; heatT: number;
   // presentation
   alpha: number;
+  fade: number; // 0 visible … 1 hidden, set by a material (a black hole swallowing it)
   delay: number;
   phase: number; phase2: number;
   m: [number, number, number, number, number, number];
@@ -113,6 +116,7 @@ export interface World {
   amb: number; // ambient amplitude multiplier
   speed: number; // ambient speed multiplier
   tune: number; // the active material's own dial, 0..1 (0.5 is neutral)
+  element: ElementId;
   fx: Effects;
   plants: Plants;
   sound: Sound;

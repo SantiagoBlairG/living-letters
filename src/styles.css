@@ -263,6 +263,17 @@ kbd {
 .switch input:checked { background: color-mix(in srgb, var(--ink) 45%, transparent); }
 .switch input:checked::after { transform: translateX(12px); }
 
+.elements { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.elements button {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 7px; border-radius: 12px;
+  background: var(--fill); border: 1px solid var(--line); font-size: 12px; font-weight: 600;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.15s var(--ease);
+}
+.elements button:hover { border-color: var(--line-strong); }
+.elements button:active { transform: scale(0.97); }
+.elements button[aria-checked='true'] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.elements .small { grid-column: 1 / -1; margin: 2px 0 0; }
+
 .fonts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .fonts button {
   display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 2px 7px; border-radius: 12px;

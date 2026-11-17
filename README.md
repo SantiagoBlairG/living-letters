@@ -34,7 +34,7 @@ Node 20+ is enough. There is no backend.
 
 - **Typeface** for the word: Serif, Heavy, Round, Mono or Hand.
 - **Colour**: five presets, or **Custom** with your own background, letters and accent, and an optional gradient.
-- **Background effect** (switch under Colour): a faint atmosphere in the spirit of the material that answers the pointer — soft blobs, rising rings, iron filings, pollen, air currents, water lines, a gravity well, sparks, blowing sand, drips, lensed stars, embers, dust or rain.
+- **Background effect** (switch under Colour): a faint atmosphere in the spirit of the material that answers hover, press and clicks — soft blobs, a garden along the bottom edge, rising balloons that pop, iron filings, air currents, water lines that ripple, a gravity well, cracked glass with drifting shards, blowing sand, drips, lensed stars, and for the elements a glow with embers, gusts with leaves, rock strata that quake, or rain landing in rings.
 - **Fine-tune**: besides Intensity and Motion, each material has its own dial (Softness, Air, Reach, Density, Lightness, Ripple size, Weight, Shards, Grain size, Flow).
 
 ## Export

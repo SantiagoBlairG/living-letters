@@ -456,6 +456,7 @@ export class Stage implements World {
     try { this.canvas.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
     this.downHit = this.hit(x, y);
     BEHAVIORS[this.material].down(this, this.downHit);
+    this.backdrop.press();
     this.events.onInteract?.();
   };
 
@@ -463,6 +464,8 @@ export class Stage implements World {
     const p = this.p;
     if (!p.down) return;
     BEHAVIORS[this.material].up(this, this.downHit, click);
+    this.backdrop.release();
+    if (click && this.backdropOn) this.backdrop.click(p.x, p.y); // the background answers clicks too
     p.down = false; p.grab = null;
     if (click && !this.downHit) {
       const lt = this.lastEmptyTap;

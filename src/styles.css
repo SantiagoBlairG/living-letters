@@ -85,10 +85,30 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .tr { top: var(--edge); right: var(--edge); display: flex; gap: 8px; }
 /* the middle column: the instructions above, Surprise me below; with the panel open, centred in what it leaves */
 .tc, .bc { left: 50%; transform: translateX(-50%); transition: left 0.42s var(--ease); }
-.tc { top: var(--edge); max-width: min(760px, calc(100% - 520px)); pointer-events: none; }
-.bc { bottom: var(--edge); }
+.tc { top: var(--edge); max-width: min(980px, calc(100% - 420px)); display: flex; align-items: center; gap: 8px; pointer-events: none; }
+.tc > * { flex: none; }
+.mat-badge {
+  pointer-events: auto; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px 0 9px;
+  border-radius: 999px; font-weight: 600; white-space: nowrap; cursor: pointer;
+}
+.mat-badge svg:first-child { width: 20px; height: 20px; }
+.mat-badge .chev { opacity: 0.7; transition: transform 0.2s var(--ease); }
+.mat-badge[aria-expanded='true'] .chev { transform: rotate(180deg); }
+.mat-badge:hover { border-color: var(--line-strong); }
+
+.quick-controls {
+  position: absolute; z-index: 7; top: calc(var(--edge) + 46px); left: 50%; transform: translateX(-50%);
+  width: min(380px, calc(100% - 28px)); padding: 14px 16px 12px; border-radius: 20px; display: grid; gap: 10px;
+  animation: qc-in 0.22s var(--ease); transition: left 0.42s var(--ease);
+}
+@keyframes qc-in { from { opacity: 0; transform: translate(-50%, -6px) scale(0.98); } }
+.quick-controls .m-desc { margin: 0; }
+.quick-controls .elements { margin-top: 0; }
+.quick-controls .slider .small { margin-top: 0; }
+.bc { bottom: calc(var(--edge) + 6px); }
+.bc .chip { height: 42px; padding: 0 20px 0 15px; font-size: 14px; gap: 8px; }
 @media (min-width: 1100px) {
-  .app[data-panel='open'] :is(.tc, .bc) { left: calc((100% - 340px) / 2); }
+  .app[data-panel='open'] :is(.tc, .bc, .quick-controls) { left: calc((100% - 340px) / 2); }
   .app[data-panel='open'] :is(.hint, .empty) { right: 340px; }
 }
 .br { bottom: var(--edge); right: var(--edge); display: flex; gap: 8px; }
@@ -226,7 +246,19 @@ kbd {
 .slider input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink) 30%, transparent); }
 .slider .small { margin-top: 0; }
 
-.palettes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.palette-row { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 8px; margin-bottom: 6px; }
+.palette-label { font-size: 11.5px; font-weight: 500; color: var(--dim); }
+.palettes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.palettes button { height: 34px !important; border-radius: 9px !important; }
+.palettes .p-a { font-size: 17px !important; left: 5px !important; }
+.palettes i { width: 4px !important; height: 4px !important; }
+.custom-btn {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; height: 32px; padding: 0 12px 0 6px;
+  border-radius: 999px; background: var(--fill); border: 1px solid var(--line); font-weight: 600; font-size: 12.5px;
+}
+.custom-btn:hover { border-color: var(--line-strong); }
+.custom-btn[aria-checked='true'] { border-color: var(--ink); }
+.swatch-dot { width: 20px; height: 20px; border-radius: 50%; background: conic-gradient(from 210deg, #ff452b, #ffb02e, #dfff70, #4fd1a5, #4056ff, #b05cff, #ff452b); }
 .palettes button {
   position: relative; height: 44px; border-radius: 12px; border: 1px solid var(--line-strong);
   display: flex; align-items: flex-end; justify-content: flex-end; gap: 2px; padding: 6px; overflow: hidden;
@@ -332,7 +364,8 @@ kbd {
   .only-wide { display: none !important; }
   .tl p { display: none; }
   .hint { top: 58%; }
-  .tc { top: 60px; max-width: calc(100% - 28px); width: max-content; }
+  .tc { top: 60px; max-width: calc(100% - 28px); flex-wrap: wrap; justify-content: center; width: max-content; }
+  .quick-controls { top: 112px; }
   .bc { left: auto; right: var(--edge); transform: none; bottom: 62px; }
   .br { bottom: 62px; left: var(--edge); right: auto; }
   .dock li { padding: 2px 9px; font-size: 12.5px; }

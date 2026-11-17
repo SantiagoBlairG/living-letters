@@ -18,6 +18,8 @@ export interface Palette {
   spark: string;
   /** second background colour; the stage fades from bg (top) to bg2 (bottom) */
   bg2?: string;
+  /** which row of the picker it sits in */
+  group?: 'dark' | 'bright' | 'gradient';
 }
 
 export interface CustomColors {

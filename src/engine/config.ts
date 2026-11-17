@@ -30,13 +30,35 @@ export function resolvePalette(s: Pick<Settings, 'palette' | 'custom'>): Palette
   return PALETTES.find((p) => p.id === s.palette) ?? PALETTES[0];
 }
 
+/** Colour palettes, in three rows: dark, bright, and gradients (the stage fades from bg at the top to bg2). */
 export const PALETTES: Palette[] = [
-  { id: 'night', name: 'Night', bg: '#080808', ink: '#F3F0E8', stem: '#4056FF', flower: '#FF452B', spark: '#DFFF70' },
-  { id: 'paper', name: 'Paper', bg: '#F3F0E8', ink: '#080808', stem: '#4056FF', flower: '#FF452B', spark: '#8FAE00' },
-  { id: 'cobalt', name: 'Cobalt', bg: '#4056FF', ink: '#F3F0E8', stem: '#080808', flower: '#FF452B', spark: '#DFFF70' },
-  { id: 'ember', name: 'Ember', bg: '#FF452B', ink: '#080808', stem: '#F3F0E8', flower: '#4056FF', spark: '#DFFF70' },
-  { id: 'acid', name: 'Acid', bg: '#DFFF70', ink: '#080808', stem: '#4056FF', flower: '#FF452B', spark: '#4056FF' },
+  { id: 'night', name: 'Night', group: 'dark', bg: '#080808', ink: '#F3F0E8', stem: '#4056FF', flower: '#FF452B', spark: '#DFFF70' },
+  { id: 'midnight', name: 'Midnight', group: 'dark', bg: '#0E1530', ink: '#E8ECFF', stem: '#5B7CFF', flower: '#FF6B8B', spark: '#9BE7FF' },
+  { id: 'forest', name: 'Forest', group: 'dark', bg: '#0D1F17', ink: '#E9F2E4', stem: '#3FA36B', flower: '#F2A541', spark: '#C8F169' },
+  { id: 'plum', name: 'Plum', group: 'dark', bg: '#1E0F24', ink: '#F4E8F7', stem: '#9B5DE5', flower: '#F15BB5', spark: '#FEE440' },
+  { id: 'oxblood', name: 'Oxblood', group: 'dark', bg: '#2A0C0E', ink: '#F7E6DA', stem: '#E3A35C', flower: '#E5383B', spark: '#FFD6A5' },
+  { id: 'slate', name: 'Slate', group: 'dark', bg: '#1B2128', ink: '#E6EDF3', stem: '#6CB4C9', flower: '#F28C61', spark: '#E9F28C' },
+  { id: 'paper', name: 'Paper', group: 'bright', bg: '#F3F0E8', ink: '#080808', stem: '#4056FF', flower: '#FF452B', spark: '#8FAE00' },
+  { id: 'cobalt', name: 'Cobalt', group: 'bright', bg: '#4056FF', ink: '#F3F0E8', stem: '#080808', flower: '#FF452B', spark: '#DFFF70' },
+  { id: 'ember', name: 'Ember', group: 'bright', bg: '#FF452B', ink: '#080808', stem: '#F3F0E8', flower: '#4056FF', spark: '#DFFF70' },
+  { id: 'acid', name: 'Acid', group: 'bright', bg: '#DFFF70', ink: '#080808', stem: '#4056FF', flower: '#FF452B', spark: '#4056FF' },
+  { id: 'sky', name: 'Sky', group: 'bright', bg: '#BFE3FF', ink: '#0B1B3A', stem: '#2E5BFF', flower: '#FF5C8A', spark: '#0E8F6F' },
+  { id: 'peach', name: 'Peach', group: 'bright', bg: '#FFD9C2', ink: '#2B1810', stem: '#1F7A6B', flower: '#E5383B', spark: '#2E5BFF' },
+  { id: 'aurora', name: 'Aurora', group: 'gradient', bg: '#0B1E3B', bg2: '#1F6E6A', ink: '#EFFFF8', stem: '#46E0B4', flower: '#B48CFF', spark: '#E6FF7A' },
+  { id: 'dusk', name: 'Dusk', group: 'gradient', bg: '#15131F', bg2: '#3A2560', ink: '#F6F1E7', stem: '#8E7CFF', flower: '#FF7A59', spark: '#FFD27A' },
+  { id: 'sunset', name: 'Sunset', group: 'gradient', bg: '#2B0F3A', bg2: '#C9473F', ink: '#FFF3E6', stem: '#FFB347', flower: '#FFD166', spark: '#FF8FAB' },
+  { id: 'ocean', name: 'Ocean', group: 'gradient', bg: '#031B2E', bg2: '#0F5E7A', ink: '#E6F7FF', stem: '#3DDCFF', flower: '#FF8A65', spark: '#B8FFF2' },
+  { id: 'embers', name: 'Embers', group: 'gradient', bg: '#1A0A05', bg2: '#6B1F0E', ink: '#FFEBD6', stem: '#FF9F43', flower: '#FF4D2E', spark: '#FFD66B' },
+  { id: 'candy', name: 'Candy', group: 'gradient', bg: '#FFD6E8', bg2: '#C9D7FF', ink: '#1E1640', stem: '#5B4BDB', flower: '#FF4F8B', spark: '#00A6A6' },
 ];
+
+/** A palette for Surprise me: often a gradient, sometimes dark, sometimes bright — never the one in use. */
+export function surprisePalette(current: string) {
+  const r = Math.random();
+  const group = r < 0.45 ? 'gradient' : r < 0.75 ? 'dark' : 'bright';
+  const pool = PALETTES.filter((p) => p.group === group && p.id !== current);
+  return pool[Math.floor(Math.random() * pool.length)].id;
+}
 
 export interface MaterialInfo {
   id: MaterialId;

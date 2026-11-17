@@ -1,4 +1,4 @@
-import { ELEMENTS, FONTS, MATERIALS, MAX_CHARS, PALETTES, SUGGESTIONS, TUNES } from '../engine/config';
+import { ELEMENTS, FONTS, MATERIALS, MAX_CHARS, PALETTES, TUNES } from '../engine/config';
 import type { CustomColors, ElementId, MaterialId, Settings } from '../engine/types';
 import { cleanWord } from '../App';
 import { Icon } from './Icon';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 /** Small drawings of each material's cursor, so the picker previews the tool. */
-function Glyph({ id }: { id: MaterialId }) {
+export function Glyph({ id }: { id: MaterialId }) {
   return (
     <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
       {id === 'jelly' && (<><ellipse cx="16" cy="17" rx="11" ry="9" /><circle cx="14" cy="16" r="2.8" fill="currentColor" stroke="none" /></>)}
@@ -65,11 +65,6 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
             onChange={(e) => onChange({ word: cleanWord(e.target.value) })}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur(); }}
           />
-          <div className="suggest" role="group" aria-label="Suggestions">
-            {SUGGESTIONS.map((w) => (
-              <button key={w} type="button" aria-pressed={settings.word === w} onClick={() => onChange({ word: w })}>{w}</button>
-            ))}
-          </div>
         </section>
 
         <section>
@@ -122,21 +117,28 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
 
         <section>
           <div className="row"><span id="col-label">Color</span><span className="dim">{custom ? 'Custom' : PALETTES.find((p) => p.id === settings.palette)?.name}</span></div>
-          <div className="palettes" role="radiogroup" aria-labelledby="col-label">
-            {PALETTES.map((p) => (
-              <button
-                key={p.id} type="button" role="radio" aria-checked={settings.palette === p.id} aria-label={p.name} title={p.name}
-                style={{ background: p.bg, color: p.ink }} onClick={() => onChange({ palette: p.id })}
-              >
-                <span className="p-a" aria-hidden="true">a</span>
-                <i style={{ background: p.stem }} /><i style={{ background: p.flower }} /><i style={{ background: p.spark }} />
-              </button>
+          <div role="radiogroup" aria-labelledby="col-label">
+            {(['dark', 'bright', 'gradient'] as const).map((g) => (
+              <div key={g} className="palette-row">
+                <span className="palette-label">{{ dark: 'Dark', bright: 'Bright', gradient: 'Gradient' }[g]}</span>
+                <div className="palettes">
+                  {PALETTES.filter((p) => p.group === g).map((p) => (
+                    <button
+                      key={p.id} type="button" role="radio" aria-checked={settings.palette === p.id} aria-label={p.name} title={p.name}
+                      style={{ background: p.bg2 ? `linear-gradient(160deg, ${p.bg}, ${p.bg2})` : p.bg, color: p.ink }}
+                      onClick={() => onChange({ palette: p.id })}
+                    >
+                      <span className="p-a" aria-hidden="true">a</span>
+                      <i style={{ background: p.stem }} /><i style={{ background: p.flower }} /><i style={{ background: p.spark }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
             <button
-              type="button" role="radio" aria-checked={custom} aria-label="Custom colours" title="Custom"
-              className="p-custom" onClick={() => onChange({ palette: 'custom' })}
+              type="button" role="radio" aria-checked={custom} className="custom-btn" onClick={() => onChange({ palette: 'custom' })}
             >
-              <span className="p-a" aria-hidden="true">+</span>
+              <span className="swatch-dot" aria-hidden="true" />Custom colours
             </button>
           </div>
           {custom && (
@@ -168,7 +170,7 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
   );
 }
 
-function Slider({ id, label, hint, value, onChange }: { id: string; label: string; hint: string; value: number; onChange(v: number): void }) {
+export function Slider({ id, label, hint, value, onChange }: { id: string; label: string; hint: string; value: number; onChange(v: number): void }) {
   const pct = Math.round(value * 100);
   return (
     <div className="slider">
@@ -194,7 +196,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-function ElementIcon({ id }: { id: ElementId }) {
+export function ElementIcon({ id }: { id: ElementId }) {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
       {id === 'fire' && <path stroke="none" d="M12 2c4 4 6 7.5 6 11a6 6 0 0 1-12 0c0-2.5 1.2-4.5 3-6 0 2 1 3.2 2.2 3.6C10.6 7.8 11 5 12 2Z" />}

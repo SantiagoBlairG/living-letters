@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { DEFAULT_CUSTOM, ELEMENTS, MATERIALS, MAX_CHARS, PRESETS, resolvePalette } from './engine/config';
+import { DEFAULT_CUSTOM, ELEMENTS, MATERIALS, MAX_CHARS, PRESETS, resolvePalette, surprisePalette } from './engine/config';
 import { Stage } from './engine/stage';
 import { FORMATS, Recording, fileName, outSize, saveFile, videoType, type FormatId } from './engine/exporter';
 import type { Settings } from './engine/types';
@@ -7,6 +7,8 @@ import { Panel } from './ui/Panel';
 import { QuickEditor } from './ui/QuickEditor';
 import { Icon } from './ui/Icon';
 import { ExportMenu } from './ui/ExportMenu';
+import { QuickControls } from './ui/QuickControls';
+import { Glyph } from './ui/Panel';
 
 const MAX_REC = 20; // seconds
 const VIDEO = videoType();
@@ -87,6 +89,9 @@ export function App() {
   const [format, setFormat] = useState<FormatId>('screen');
   const [transparent, setTransparent] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const quickOpenRef = useRef(quickOpen);
+  quickOpenRef.current = quickOpen;
   const [rec, setRec] = useState<{ t0: number; elapsed: number } | null>(null);
   const recRef = useRef<Recording | null>(null);
   const [view, setView] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
@@ -154,7 +159,8 @@ export function App() {
     setSettings((s) => {
       const pool = PRESETS.filter((p) => p.word !== s.word && p.material !== s.material);
       const pick = pool[Math.floor(Math.random() * pool.length)];
-      return { ...s, ...pick };
+      // a word and a material from the presets, and a palette that is often a gradient
+      return { ...s, word: pick.word, material: pick.material, palette: surprisePalette(s.palette) };
     });
     stageRef.current?.reset();
   }, []);
@@ -236,7 +242,11 @@ export function App() {
 
   /** Keys that never produce text, shared by the page and the stage's own text field. Returns true when handled. */
   const command = useCallback((key: string) => {
-    if (key === 'Escape') { if (menuOpenRef.current) setMenuOpen(false); else setPanelOpen((o) => !o); }
+    if (key === 'Escape') {
+      if (menuOpenRef.current) setMenuOpen(false);
+      else if (quickOpenRef.current) setQuickOpen(false);
+      else setPanelOpen((o) => !o);
+    }
     else if (key === 'ArrowRight') cycleMaterial(1);
     else if (key === 'ArrowLeft') cycleMaterial(-1);
     else if (key === 'Enter') reset();
@@ -334,9 +344,20 @@ export function App() {
         {coarse ? 'Touch the letters to play. Double-tap to change the word.' : 'Just start typing, or play with the letters.'}
       </p>
 
-      <ul data-devour className="corner tc dock glass" aria-live="polite" aria-label="How to play">
-        {gestures.map((g) => <li key={g}>{g}</li>)}
-      </ul>
+      <div className="corner tc" data-devour>
+        <button
+          type="button" className="mat-badge glass" data-quick-toggle aria-expanded={quickOpen} aria-haspopup="dialog"
+          onClick={() => setQuickOpen((o) => !o)}
+        >
+          <Glyph id={settings.material} />
+          <span>{material.label}{settings.material === 'elements' && <span className="dim"> · {element.label}</span>}</span>
+          <svg className="chev" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        <ul className="dock glass" aria-live="polite" aria-label="How to play">
+          {gestures.map((g) => <li key={g}>{g}</li>)}
+        </ul>
+      </div>
+      {quickOpen && <QuickControls settings={settings} onChange={patch} onClose={() => setQuickOpen(false)} />}
 
       <div className="corner bc" data-devour>
         <button type="button" className="chip glass" onClick={surprise}>

@@ -1,5 +1,5 @@
-import { MATERIALS, MAX_CHARS, PALETTES, SUGGESTIONS } from '../engine/config';
-import type { MaterialId, Settings } from '../engine/types';
+import { FONTS, MATERIALS, MAX_CHARS, PALETTES, SUGGESTIONS, TUNES } from '../engine/config';
+import type { CustomColors, MaterialId, Settings } from '../engine/types';
 import { cleanWord } from '../App';
 import { Icon } from './Icon';
 
@@ -33,6 +33,10 @@ function Glyph({ id }: { id: MaterialId }) {
 export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise }: Props) {
   const count = Array.from(settings.word).length;
   const current = MATERIALS.find((m) => m.id === settings.material)!;
+  const font = FONTS.find((f) => f.id === settings.font) ?? FONTS[0];
+  const tune = TUNES[settings.material];
+  const custom = settings.palette === 'custom';
+  const setCustom = (c: Partial<CustomColors>) => onChange({ custom: { ...settings.custom, ...c } });
   return (
     <aside id="panel" className="panel glass" data-open={open} aria-label="Controls">
       <button type="button" className="handle" onClick={onToggle} aria-expanded={open}>
@@ -54,6 +58,7 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
           </div>
           <input
             id="word" className="word-input" value={settings.word} placeholder="Type a word"
+            style={{ fontFamily: font.family, fontWeight: font.weight }}
             maxLength={MAX_CHARS * 2} autoComplete="off" autoCapitalize="off" spellCheck={false} enterKeyHint="done"
             onChange={(e) => onChange({ word: cleanWord(e.target.value) })}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur(); }}
@@ -61,6 +66,18 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
           <div className="suggest" role="group" aria-label="Suggestions">
             {SUGGESTIONS.map((w) => (
               <button key={w} type="button" aria-pressed={settings.word === w} onClick={() => onChange({ word: w })}>{w}</button>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="row"><span id="font-label">Typeface</span><span className="dim">{font.label}</span></div>
+          <div className="fonts" role="radiogroup" aria-labelledby="font-label">
+            {FONTS.map((f) => (
+              <button key={f.id} type="button" role="radio" aria-checked={settings.font === f.id} onClick={() => onChange({ font: f.id })}>
+                <span className="f-ag" style={{ fontFamily: f.family, fontWeight: f.weight }} aria-hidden="true">Ag</span>
+                <span className="f-name">{f.label}</span>
+              </button>
             ))}
           </div>
         </section>
@@ -83,8 +100,15 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
           <Slider id="motion" label="Motion" hint="How much they move on their own" value={settings.motion} onChange={(v) => onChange({ motion: v })} />
         </section>
 
+        <section className="tune">
+          <Slider
+            id="tune" label={`${current.label} · ${tune.label}`} hint={tune.hint} value={settings.tune[settings.material] ?? 0.5}
+            onChange={(v) => onChange({ tune: { ...settings.tune, [settings.material]: v } })}
+          />
+        </section>
+
         <section>
-          <div className="row"><span id="col-label">Color</span><span className="dim">{PALETTES.find((p) => p.id === settings.palette)?.name}</span></div>
+          <div className="row"><span id="col-label">Color</span><span className="dim">{custom ? 'Custom' : PALETTES.find((p) => p.id === settings.palette)?.name}</span></div>
           <div className="palettes" role="radiogroup" aria-labelledby="col-label">
             {PALETTES.map((p) => (
               <button
@@ -95,7 +119,27 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
                 <i style={{ background: p.stem }} /><i style={{ background: p.flower }} /><i style={{ background: p.spark }} />
               </button>
             ))}
+            <button
+              type="button" role="radio" aria-checked={custom} aria-label="Custom colours" title="Custom"
+              className="p-custom" onClick={() => onChange({ palette: 'custom' })}
+            >
+              <span className="p-a" aria-hidden="true">+</span>
+            </button>
           </div>
+          {custom && (
+            <div className="custom">
+              <ColorField label="Background" value={settings.custom.bg} onChange={(v) => setCustom({ bg: v })} />
+              <ColorField label="Letters" value={settings.custom.ink} onChange={(v) => setCustom({ ink: v })} />
+              <ColorField label="Accent" value={settings.custom.accent} onChange={(v) => setCustom({ accent: v })} />
+              <label className="switch">
+                <input type="checkbox" checked={settings.custom.gradient} onChange={(e) => setCustom({ gradient: e.target.checked })} />
+                <span>Gradient</span>
+              </label>
+              {settings.custom.gradient && (
+                <ColorField label="Fades to" value={settings.custom.bg2} onChange={(v) => setCustom({ bg2: v })} />
+              )}
+            </div>
+          )}
         </section>
 
         <section className="actions">
@@ -121,5 +165,14 @@ function Slider({ id, label, hint, value, onChange }: { id: string; label: strin
       />
       <p id={`${id}-hint`} className="dim small">{hint}</p>
     </div>
+  );
+}
+
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange(v: string): void }) {
+  return (
+    <label className="swatch">
+      <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
+      <span>{label}</span>
+    </label>
   );
 }

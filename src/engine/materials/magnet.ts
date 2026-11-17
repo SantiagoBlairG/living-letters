@@ -1,5 +1,5 @@
 import type { Material } from '../types';
-import { clamp } from '../simulation';
+import { clamp, tuneF } from '../simulation';
 
 /** Tension and attraction. Stiff, well-damped anchors keep the word legible while the field pulls. */
 
@@ -18,7 +18,7 @@ export const magnet: Material = {
     const p = w.p, fs = w.fs;
     if (!p.active) return;
     const hold = p.down ? Math.min(1, p.held / 0.3) : 0; // the field charges up while pressed
-    const R = Math.max(170, fs * 0.62) * (1 + 0.7 * hold);
+    const R = Math.max(170, fs * 0.62) * (1 + 0.7 * hold) * tuneF(w.tune, 3);
     const strength = (1 + 1.5 * hold) * w.inten * fs * 20;
     for (const l of w.letters) {
       const dx = p.x - w.cx(l), dy = p.y - w.cy(l);
@@ -39,7 +39,7 @@ export const magnet: Material = {
 
   up(w, _hit, click) {
     const p = w.p, fs = w.fs;
-    const R = Math.max(280, fs * 1.05);
+    const R = Math.max(280, fs * 1.05) * tuneF(w.tune, 3);
     const power = (click ? 1 : 0.5) * w.inten;
     for (const l of w.letters) {
       const dx = w.cx(l) - p.x, dy = w.cy(l) - p.y;

@@ -1,5 +1,5 @@
 import type { Material, World } from '../types';
-import { calm } from '../simulation';
+import { calm, tuneF } from '../simulation';
 import { css } from '../color';
 
 /**
@@ -39,7 +39,7 @@ export const wave: Material = {
   update(w) {
     const fs = w.fs, p = w.p;
     for (let i = waves.length - 1; i >= 0; i--) if (w.t - waves[i].t0 > LIFE) waves.splice(i, 1);
-    const c = SPEED * fs, lam = LEN * fs;
+    const c = SPEED * fs, lam = LEN * fs * tuneF(w.tune, 2), amp = tuneF(w.tune, 3); // Ripple size
     const hy = w.baseline - 0.3 * fs;
 
     for (const l of w.letters) {
@@ -48,7 +48,7 @@ export const wave: Material = {
         const age = w.t - v.t0;
         const u = (Math.hypot(hx - v.x, hy - v.y) - c * age) / lam;
         if (u < -2.5 || u > 2.5) continue;
-        const env = Math.exp(-u * u) * v.amp * Math.exp(-age * 0.7) * w.inten;
+        const env = Math.exp(-u * u) * v.amp * Math.exp(-age * 0.7) * w.inten * amp;
         const k = Math.PI * u, side = hx >= v.x ? 1 : -1;
         l.ty -= env * Math.cos(k) * fs * 0.2; // heave on the crest, sink in the trough
         l.rT += env * Math.sin(k) * 0.28 * side; // and lean with the slope
@@ -91,7 +91,7 @@ export const wave: Material = {
 
   /** The rings themselves, faint, under the letters. */
   back(ctx, w, colors) {
-    const c = SPEED * w.fs, lam = LEN * w.fs;
+    const c = SPEED * w.fs, lam = LEN * w.fs * tuneF(w.tune, 2);
     for (const v of waves) {
       const age = w.t - v.t0;
       const a = 0.3 * v.amp * Math.exp(-age * 1.2);

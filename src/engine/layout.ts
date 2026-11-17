@@ -9,7 +9,10 @@ function measurer() {
   return mctx;
 }
 
-export const fontOf = (px: number) => `400 ${px}px ${SERIF}`;
+let face = { family: SERIF, weight: 400 };
+/** Sets the typeface the word is set in. Glyph caches must be cleared after it changes. */
+export function setFace(family: string, weight: number) { face = { family, weight }; }
+export const fontOf = (px: number) => `${face.weight} ${px}px ${face.family}`;
 
 export interface Slot { ch: string; x: number; adv: number } // px, relative to the word's left edge
 export interface WordLayout { fs: number; baseline: number; left: number; width: number; slots: Slot[] }

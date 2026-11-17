@@ -1,9 +1,34 @@
-import type { MaterialId, Palette } from './types';
+import type { CustomColors, MaterialId, Palette, Settings } from './types';
+import { mixHex } from './color';
 
 export const SERIF = '"Gloock", "Bodoni 72", "Didot", "Playfair Display", Georgia, "Times New Roman", serif';
 export const MONO = '"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
 
 export const MAX_CHARS = 14;
+
+/** Typefaces for the word. Each is bundled locally; see licenses/. */
+export const FONTS = [
+  { id: 'serif', label: 'Serif', family: SERIF, weight: 400 },
+  { id: 'heavy', label: 'Heavy', family: '"Archivo Black", "Arial Black", Impact, sans-serif', weight: 400 },
+  { id: 'round', label: 'Round', family: '"Fredoka", "Arial Rounded MT Bold", sans-serif', weight: 600 },
+  { id: 'mono', label: 'Mono', family: '"Space Mono", ui-monospace, Menlo, monospace', weight: 700 },
+  { id: 'hand', label: 'Hand', family: '"Caveat", "Segoe Print", cursive', weight: 700 },
+];
+
+export const DEFAULT_CUSTOM: CustomColors = { bg: '#15131f', ink: '#f6f1e7', accent: '#ff7a59', gradient: true, bg2: '#3a2560' };
+
+/** The palette in use: a preset, or one built from the custom colours. */
+export function resolvePalette(s: Pick<Settings, 'palette' | 'custom'>): Palette {
+  if (s.palette === 'custom') {
+    const c = s.custom;
+    return {
+      id: 'custom', name: 'Custom', bg: c.bg, ink: c.ink, flower: c.accent,
+      spark: mixHex(c.accent, '#ffffff', 0.35), stem: mixHex(c.accent, c.ink, 0.45),
+      bg2: c.gradient ? c.bg2 : c.bg,
+    };
+  }
+  return PALETTES.find((p) => p.id === s.palette) ?? PALETTES[0];
+}
 
 export const PALETTES: Palette[] = [
   { id: 'night', name: 'Night', bg: '#080808', ink: '#F3F0E8', stem: '#4056FF', flower: '#FF452B', spark: '#DFFF70' },
@@ -73,6 +98,20 @@ export const MATERIALS: MaterialInfo[] = [
     touchHelp: 'Tap to splash · Hold a letter to pour it, drag to paint',
   },
 ];
+
+/** Each material's own dial, shown under Intensity and Motion. */
+export const TUNES: Record<MaterialId, { label: string; hint: string }> = {
+  jelly: { label: 'Softness', hint: 'How much the letters wobble' },
+  balloon: { label: 'Air', hint: 'How fast the letters fill up' },
+  magnet: { label: 'Reach', hint: 'How far the field pulls' },
+  bloom: { label: 'Density', hint: 'How thick the garden grows' },
+  float: { label: 'Lightness', hint: 'How easily the letters drift' },
+  wave: { label: 'Ripple size', hint: 'How tall and wide the waves are' },
+  gravity: { label: 'Weight', hint: 'How hard the letters fall' },
+  explode: { label: 'Shards', hint: 'How many pieces a letter breaks into' },
+  sand: { label: 'Grain size', hint: 'From fine dust to coarse sand' },
+  melt: { label: 'Flow', hint: 'How runny the liquid is' },
+};
 
 export const SUGGESTIONS = ['hello', 'jelly', 'bloom', 'float', 'chaos'];
 

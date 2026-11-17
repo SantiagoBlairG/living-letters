@@ -1,7 +1,7 @@
 import type { ColorKey, Palette } from './types';
 
 export type RGB = [number, number, number];
-export const KEYS: ColorKey[] = ['bg', 'ink', 'stem', 'flower', 'spark'];
+export const KEYS: ColorKey[] = ['bg', 'bg2', 'ink', 'stem', 'flower', 'spark'];
 
 export function hex(h: string): RGB {
   const n = parseInt(h.slice(1), 16);
@@ -13,6 +13,12 @@ export const mix = (a: RGB, b: RGB, t: number): RGB => [
   a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t,
 ];
 
+/** Mixes two #rrggbb colours into another #rrggbb. */
+export function mixHex(a: string, b: string, t: number) {
+  const c = mix(hex(a), hex(b), t);
+  return '#' + c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+}
+
 /** The palette as it is on screen right now — eases toward the selected one, so nothing flashes. */
 export class LiveColors {
   now: Record<ColorKey, RGB>;
@@ -22,7 +28,7 @@ export class LiveColors {
     this.target = this.read(p);
   }
   private read(p: Palette) {
-    return { bg: hex(p.bg), ink: hex(p.ink), stem: hex(p.stem), flower: hex(p.flower), spark: hex(p.spark) };
+    return { bg: hex(p.bg), bg2: hex(p.bg2 ?? p.bg), ink: hex(p.ink), stem: hex(p.stem), flower: hex(p.flower), spark: hex(p.spark) };
   }
   set(p: Palette) { this.target = this.read(p); }
   update(dt: number) {

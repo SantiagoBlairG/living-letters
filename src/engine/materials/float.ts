@@ -1,5 +1,5 @@
 import type { Material } from '../types';
-import { clamp } from '../simulation';
+import { clamp, tuneF } from '../simulation';
 
 /** Lightness. Weak, slow springs and no deformation at all — letters drift, swing and come home late. */
 
@@ -17,7 +17,8 @@ export const float: Material = {
 
   update(w) {
     const p = w.p, fs = w.fs;
-    for (const l of w.letters) l.rT += clamp(l.vx / (fs * 3.2), -0.3, 0.3); // swing with your own drift
+    const light = tuneF(1 - w.tune, 4); // Lightness: weaker springs, longer drifts
+    for (const l of w.letters) { l.kMul *= light; l.rT += clamp(l.vx / (fs * 3.2), -0.3, 0.3); } // swing with your own drift
     const g = p.grab;
     if (g) {
       let dx = p.x - p.downX, dy = p.y - p.downY;

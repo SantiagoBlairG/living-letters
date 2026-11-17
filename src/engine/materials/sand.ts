@@ -1,5 +1,5 @@
 import type { Letter, Material, World } from '../types';
-import { calm, clamp, toLocal } from '../simulation';
+import { calm, clamp, toLocal, tuneF } from '../simulation';
 import { ASC, MS, PAD_X } from '../layout';
 
 /**
@@ -16,6 +16,7 @@ interface Pile {
   n: number;
   g: number; // grain size, px
   fs: number;
+  tune: number;
   home: Float32Array; pos: Float32Array; vel: Float32Array; // local px, pairs
   edge: Float32Array; // 0 deep inside the stroke … 1 on its surface
   loose: Float32Array; // 0 attached … 1 detaches
@@ -47,21 +48,21 @@ function sample(w: World, l: Letter, step: number) {
 }
 
 function build(w: World, l: Letter): Pile {
-  let g = Math.max(2, w.fs / 90);
+  let g = Math.max(2, (w.fs / 90) * tuneF(w.tune, 3)); // Grain size
   let s = sample(w, l, g);
   if (s.pts.length / 2 > MAX_GRAINS) { g *= Math.sqrt(s.pts.length / 2 / MAX_GRAINS); s = sample(w, l, g); }
   const n = s.pts.length / 2;
   const shade = new Uint8Array(n);
   for (let i = 0; i < n; i++) shade[i] = (Math.random() * 3) | 0;
   return {
-    n, g, fs: w.fs, home: new Float32Array(s.pts), pos: new Float32Array(s.pts), vel: new Float32Array(s.pts.length),
+    n, g, fs: w.fs, tune: w.tune, home: new Float32Array(s.pts), pos: new Float32Array(s.pts), vel: new Float32Array(s.pts.length),
     edge: new Float32Array(s.edge), loose: new Float32Array(n), free: new Uint8Array(n), shade, mix: 0, last: -10,
   };
 }
 
 function pile(w: World, l: Letter) {
   let s = piles.get(l);
-  if (s && s.fs !== w.fs) { piles.delete(l); s = undefined; }
+  if (s && (s.fs !== w.fs || s.tune !== w.tune)) { piles.delete(l); s = undefined; }
   if (!s) { s = build(w, l); piles.set(l, s); }
   return s;
 }

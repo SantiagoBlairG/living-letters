@@ -5,7 +5,7 @@ import type { Sound } from './audio';
 import type { RGB } from './color';
 
 export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity' | 'balloon' | 'wave' | 'explode' | 'sand' | 'melt';
-export type ColorKey = 'bg' | 'ink' | 'stem' | 'flower' | 'spark';
+export type ColorKey = 'bg' | 'bg2' | 'ink' | 'stem' | 'flower' | 'spark';
 
 export interface Palette {
   id: string;
@@ -15,6 +15,16 @@ export interface Palette {
   stem: string;
   flower: string;
   spark: string;
+  /** second background colour; the stage fades from bg (top) to bg2 (bottom) */
+  bg2?: string;
+}
+
+export interface CustomColors {
+  bg: string;
+  ink: string;
+  accent: string;
+  gradient: boolean;
+  bg2: string;
 }
 
 export interface Settings {
@@ -22,7 +32,11 @@ export interface Settings {
   material: MaterialId;
   intensity: number; // 0..1 slider
   motion: number; // 0..1 slider
-  palette: string;
+  palette: string; // a preset id, or 'custom'
+  custom: CustomColors;
+  font: string;
+  /** each material's own dial, 0..1; 0.5 is neutral */
+  tune: Partial<Record<MaterialId, number>>;
 }
 
 /** One glyph of the word: a small rigid-ish body with springs on every channel. */
@@ -98,6 +112,7 @@ export interface World {
   inten: number; // interaction strength multiplier
   amb: number; // ambient amplitude multiplier
   speed: number; // ambient speed multiplier
+  tune: number; // the active material's own dial, 0..1 (0.5 is neutral)
   fx: Effects;
   plants: Plants;
   sound: Sound;

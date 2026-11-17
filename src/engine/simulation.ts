@@ -4,6 +4,9 @@ import type { Letter, SpringSpec } from './types';
 
 export const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
 
+/** A material dial (0..1) as a multiplier: 1 at the middle, from 1/√range to √range at the ends. */
+export const tuneF = (t: number, range: number) => Math.pow(range, t - 0.5);
+
 export function makeLetter(ch: string, index: number): Letter {
   return {
     ch, index, glyph: null, adv: 0, bx: 0,

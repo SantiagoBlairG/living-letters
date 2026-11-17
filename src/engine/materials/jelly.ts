@@ -1,5 +1,5 @@
 import type { Letter, Material, World } from '../types';
-import { clamp } from '../simulation';
+import { clamp, tuneF } from '../simulation';
 
 /** Soft, elastic, with mass. Under-damped springs give the wobble; squash and stretch do the rest. */
 
@@ -45,7 +45,9 @@ export const jelly: Material = {
 
   update(w) {
     const p = w.p, fs = w.fs;
+    const soft = tuneF(1 - w.tune, 3); // Softness: looser springs wobble more
     for (const l of w.letters) {
+      l.kMul *= soft;
       // bodies stretch along their own motion
       const hx = clamp(Math.abs(l.vx) / (fs * 7), 0, 0.14), hy = clamp(Math.abs(l.vy) / (fs * 7), 0, 0.14);
       l.sxT += hx - hy * 0.7; l.syT += hy - hx * 0.7;

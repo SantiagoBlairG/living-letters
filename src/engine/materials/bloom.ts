@@ -1,5 +1,5 @@
 import type { Material } from '../types';
-import { clamp } from '../simulation';
+import { clamp, tuneF } from '../simulation';
 
 /** A flat, graphic garden that only ever grows from the ink of the letters. */
 
@@ -18,16 +18,17 @@ export const bloom: Material = {
     const p = w.p;
     if (!p.active) return;
     const sow = p.down;
+    const sp = 1 / tuneF(w.tune, 3); // Density: growth packed closer together
     const moved = Math.hypot(p.x - lastX, p.y - lastY);
     // rate-limited in both time and distance, so growth traces the path instead of flooding it
-    if (moved < (sow ? 16 : 26) || w.t - lastT < (sow ? 0.045 : 0.07) || p.speed < 6) return;
+    if (moved < (sow ? 16 : 26) * sp || w.t - lastT < (sow ? 0.045 : 0.07) || p.speed < 6) return;
     const e = w.nearestEdge(p.x, p.y, sow ? 40 : 52);
     if (!e) return;
     lastX = p.x; lastY = p.y; lastT = w.t;
     // sowing plants straight into the ink under the finger; hovering grows from the nearest edge
     const deep = sow && e.inside;
     const ax = deep ? e.ix : e.ex, ay = deep ? e.iy : e.ey;
-    if (w.plants.tooClose(e.l, ax, ay, sow ? 0.04 : 0.055)) return;
+    if (w.plants.tooClose(e.l, ax, ay, (sow ? 0.04 : 0.055) * sp)) return;
     const lean = clamp(p.vx / 500, -1, 1); // stems lean the way the hand is travelling
     w.plants.sprout(e.l, ax, ay, deep ? 0 : e.nx, deep ? -0.4 : e.ny, lean, w.inten, sow);
     e.l.vr += lean * 0.12 * w.inten;

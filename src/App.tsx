@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { MATERIALS, MAX_CHARS, PALETTES, PRESETS } from './engine/config';
+import { DEFAULT_CUSTOM, MATERIALS, MAX_CHARS, PRESETS, resolvePalette } from './engine/config';
 import { Stage } from './engine/stage';
 import { fileName, savePng } from './engine/exporter';
 import type { Settings } from './engine/types';
@@ -7,7 +7,10 @@ import { Panel } from './ui/Panel';
 import { QuickEditor } from './ui/QuickEditor';
 import { Icon } from './ui/Icon';
 
-const INITIAL: Settings = { word: 'hello', material: 'jelly', intensity: 0.5, motion: 0.5, palette: 'night' };
+const INITIAL: Settings = {
+  word: 'hello', material: 'jelly', intensity: 0.5, motion: 0.5, palette: 'night',
+  custom: DEFAULT_CUSTOM, font: 'serif', tune: {},
+};
 
 export const cleanWord = (v: string) =>
   Array.from(v.normalize('NFC').replace(/[\r\n\t]/g, ' ')).slice(0, MAX_CHARS).join('');
@@ -134,13 +137,14 @@ export function App() {
     if (command(e.key)) e.preventDefault();
   };
 
-  const palette = PALETTES.find((p) => p.id === settings.palette) ?? PALETTES[0];
+  const palette = resolvePalette(settings);
   const material = MATERIALS.find((m) => m.id === settings.material)!;
   const vars = useMemo(() => ({ '--ink': palette.ink, '--bg': palette.bg }) as CSSProperties, [palette]);
   useEffect(() => {
-    document.body.style.background = palette.bg;
+    const bg2 = palette.bg2 ?? palette.bg;
+    document.body.style.background = bg2 !== palette.bg ? `linear-gradient(${palette.bg}, ${bg2})` : palette.bg;
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', palette.bg);
-  }, [palette.bg]);
+  }, [palette.bg, palette.bg2]);
 
   const word = settings.word.trim();
   const exportLabel = { idle: 'Export PNG', working: 'Rendering…', saved: 'Saved', failed: 'Export failed' }[exporting];

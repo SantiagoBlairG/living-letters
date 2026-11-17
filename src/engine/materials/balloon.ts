@@ -1,5 +1,5 @@
 import type { Letter, Material, World } from '../types';
-import { calm, clamp } from '../simulation';
+import { calm, clamp, tuneF } from '../simulation';
 import { css } from '../color';
 
 /**
@@ -67,7 +67,7 @@ export const balloon: Material = {
         const d = Math.hypot(w.cx(l) - p.x, w.cy(l) - p.y);
         if (d < R) gain = (1 - d / R) * 0.75;
       }
-      if (gain > 0) { a += dt * gain * (0.4 + 0.6 * w.inten); pumping = Math.max(pumping, a); }
+      if (gain > 0) { a += dt * gain * (0.4 + 0.6 * w.inten) * tuneF(w.tune, 4); pumping = Math.max(pumping, a); }
       else a = Math.max(0, a - dt * 0.22); // slowly lets the air out
       air.set(l, a);
       if (a >= 1) { pop(w, l); continue; }

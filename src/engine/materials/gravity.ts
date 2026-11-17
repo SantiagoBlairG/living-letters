@@ -1,5 +1,5 @@
 import type { Letter, Material, World } from '../types';
-import { clamp } from '../simulation';
+import { clamp, tuneF } from '../simulation';
 
 /**
  * Weight. Nothing holds the letters in place: each one is a rigid box, the size of its own ink,
@@ -193,7 +193,7 @@ export const gravity: Material = {
     for (const l of w.letters) if (l.glyph) bodies.push(body(w, l, l === grab));
     if (!bodies.length) return;
 
-    const G = fs * 9 * w.inten * dir;
+    const G = fs * 9 * w.inten * dir * tuneF(w.tune, 4); // Weight
     const e = clamp(0.1 + 0.2 * w.amb, 0, 0.55); // Motion is bounciness
     const quiet = fs * 0.5; // slower contacts than this do not bounce, so piles settle
     const floor = w.H - (w.W < 1100 ? 52 : 0); // on small screens the sheet's handle covers the bottom edge

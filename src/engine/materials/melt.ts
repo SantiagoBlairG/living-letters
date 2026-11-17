@@ -1,5 +1,5 @@
 import type { ColorKey, Letter, Material, World } from '../types';
-import { calm, clamp, toLocal } from '../simulation';
+import { calm, clamp, toLocal, tuneF } from '../simulation';
 import { fontOf } from '../layout';
 import { css, mix, type RGB } from '../color';
 
@@ -149,7 +149,7 @@ function addDrop(x: number, y: number, vx: number, vy: number, r: number, stick:
   return d;
 }
 
-const dropSize = (w: World) => w.fs * (0.022 + Math.random() * 0.016) * (0.75 + 0.25 * w.inten);
+const dropSize = (w: World) => w.fs * (0.022 + Math.random() * 0.016) * (0.75 + 0.25 * w.inten) * tuneF(w.tune, 1.8);
 
 export const melt: Material = {
   id: 'melt',
@@ -184,7 +184,7 @@ export const melt: Material = {
           lastX = p.x; lastY = p.y;
         }
         // and a steady stream from wherever the hand is held
-        emitAcc += dt * 38 * supply;
+        emitAcc += dt * 38 * supply * tuneF(w.tune, 2.5); // Flow
         while (emitAcc >= 1) {
           emitAcc -= 1;
           addDrop(p.x + (Math.random() - 0.5) * fs * 0.02, p.y, (Math.random() - 0.5) * fs * 0.05, fs * 0.25, dropSize(w) * (0.7 + 0.3 * supply), 0, null);
@@ -229,7 +229,7 @@ export const melt: Material = {
       if (!m && !near) continue;
       m = state(w, l);
       const dMax = maxDrip(w, l, m);
-      const grow = fs * m.R * (0.12 + 0.2 * w.inten);
+      const grow = fs * m.R * (0.12 + 0.2 * w.inten) * tuneF(w.tune, 3);
       const cool = w.t - m.last > 0.9;
       let alive = false, hot = 0;
       for (let i = 0; i < m.cols; i++) {

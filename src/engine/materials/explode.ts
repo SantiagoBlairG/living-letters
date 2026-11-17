@@ -1,5 +1,5 @@
 import type { Letter, Material, World } from '../types';
-import { calm, clamp } from '../simulation';
+import { calm, clamp, tuneF } from '../simulation';
 import { css } from '../color';
 
 /**
@@ -88,7 +88,7 @@ function shatter(w: World, l: Letter, ix: number, iy: number, power: number, bx 
   }
   const [x0, y0, x1, y1] = box(w, l);
   const px = clamp(ix, x0, x1), py = clamp(iy, y0, y1);
-  const n = 7 + ((Math.random() * 3) | 0);
+  const n = clamp(Math.round((7 + Math.random() * 3) * tuneF(w.tune, 3)), 3, 24); // Shards
   const off = Math.random() * TAU;
   const angles: number[] = [];
   for (let i = 0; i < n; i++) angles.push(off + ((i + (Math.random() - 0.5) * 0.6) * TAU) / n);

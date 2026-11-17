@@ -28,6 +28,12 @@ npm run build:single   # one self-contained file: dist-single/index.html
 
 Node 20+ is enough. There is no backend.
 
+## Make it yours
+
+- **Typeface** for the word: Serif, Heavy, Round, Mono or Hand.
+- **Colour**: five presets, or **Custom** with your own background, letters and accent, and an optional gradient.
+- **Fine-tune**: besides Intensity and Motion, each material has its own dial (Softness, Air, Reach, Density, Lightness, Ripple size, Weight, Shards, Grain size, Flow).
+
 ## Typing and shortcuts
 
 Just type: any key writes straight onto the stage, with a caret after the last letter, whether the panel is open or not.
@@ -64,4 +70,5 @@ Bundled locally, all under the SIL Open Font License 1.1 (see `licenses/`):
 
 - **Gloock** — the word. Copyright 2022 The Gloock Project Authors.
 - **Figtree** — the interface. Copyright 2022 The Figtree Project Authors.
+- **Archivo Black**, **Fredoka**, **Space Mono**, **Caveat** — the other typefaces for the word.
 - **IBM Plex Mono** — key caps. Copyright © 2017 IBM Corp.

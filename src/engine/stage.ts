@@ -1,7 +1,7 @@
 import type { Ambient, EdgeHit, Letter, MaterialId, Pointer, Settings, World } from './types';
-import { PALETTES } from './config';
+import { FONTS, resolvePalette } from './config';
 import { LiveColors, css } from './color';
-import { clearGlyphs, fontOf, getGlyph, inGlyph, layoutWord } from './layout';
+import { clearGlyphs, fontOf, getGlyph, inGlyph, layoutWord, setFace } from './layout';
 import { calm, integrate, makeLetter, resetInputs } from './simulation';
 import { Effects } from './effects';
 import { Plants } from './plants';
@@ -21,7 +21,7 @@ export interface StageEvents {
 export class Stage implements World {
   letters: Letter[] = [];
   fs = 100; baseline = 0; W = 1; H = 1; t = 0;
-  inten = 1; amb = 1; speed = 1;
+  inten = 1; amb = 1; speed = 1; tune = 0.5;
   lift = 0;
   material: MaterialId;
   p: Pointer = {
@@ -46,6 +46,7 @@ export class Stage implements World {
   private lastEmptyTap = { t: -10, x: 0, y: 0 };
   private downHit: Letter | null = null;
   private amb0: Ambient = { x: 0, y: 0, r: 0, sx: 0, sy: 0 };
+  private fontId = '';
   private loose = false; // letters are flying home after a free material; hard limits wait
   private caretOn = false;
   private caretT = 0; // time of the last keystroke, so the caret stays solid while typing
@@ -54,6 +55,7 @@ export class Stage implements World {
   constructor(private canvas: HTMLCanvasElement, settings: Settings, private events: StageEvents = {}) {
     this.ctx = canvas.getContext('2d')!;
     this.settings = { ...settings };
+    this.useFace(settings.font);
     this.material = settings.material;
     this.lift = BEHAVIORS[this.material].spring.lift;
     this.colors = new LiveColors(this.palette());
@@ -93,7 +95,8 @@ export class Stage implements World {
   update(next: Settings) {
     const prev = this.settings;
     this.settings = { ...next };
-    if (next.palette !== prev.palette) this.colors.set(this.palette());
+    if (next.palette !== prev.palette || next.custom !== prev.custom) this.colors.set(this.palette());
+    if (next.font !== prev.font) this.changeFont(next.font);
     if (next.material !== prev.material) {
       // leave the old material cleanly: no leftover grabs, queued impulses or momentum
       this.p.grab = null; this.timers = [];
@@ -130,6 +133,27 @@ export class Stage implements World {
 
   /** Shows a text caret after the word while the stage is taking keystrokes. Never part of an export. */
   setCaret(on: boolean) { this.caretOn = on; this.caretT = this.t; }
+
+  private useFace(id: string) {
+    const f = FONTS.find((x) => x.id === id) ?? FONTS[0];
+    this.fontId = f.id;
+    setFace(f.family, f.weight);
+  }
+
+  /** Switches typeface once it has loaded; the word is set again from scratch and fades in. */
+  private changeFont(id: string) {
+    this.useFace(id);
+    const want = this.fontId;
+    const go = () => {
+      if (this.fontId !== want || !this.ready) return;
+      clearGlyphs();
+      this.letters = []; this.p.grab = null;
+      this.relayout(false);
+    };
+    const fonts = document.fonts;
+    if (fonts?.load) Promise.race([fonts.load(fontOf(100), 'Hello ñé Āł'), new Promise((r) => setTimeout(r, 2500))]).then(go, go);
+    else go();
+  }
 
   destroy() {
     cancelAnimationFrame(this.raf);
@@ -199,7 +223,7 @@ export class Stage implements World {
 
   /* ---------- internals ---------- */
 
-  private palette() { return PALETTES.find((p) => p.id === this.settings.palette) ?? PALETTES[0]; }
+  private palette() { return resolvePalette(this.settings); }
 
   private applyDials = () => {
     const calmMode = this.reduce.matches;
@@ -207,6 +231,7 @@ export class Stage implements World {
     this.inten = (0.3 + s.intensity * 1.4) * (calmMode ? 0.55 : 1);
     this.amb = calmMode ? 0 : s.motion * 2;
     this.speed = 0.35 + s.motion * 1.3;
+    this.tune = s.tune[this.material] ?? 0.5;
   };
 
   get mobile() { return this.W < 1100; }

@@ -92,15 +92,61 @@ function streaks(ctx: CanvasRenderingContext2D, R: number, t: number, r0: number
   ctx.setLineDash([]);
 }
 
+const TILT = -0.18; // the disk rises to the right
+const FLAT = 0.17; // how edge-on we see it
+
 /**
- * A Gargantua-style hole: the far side of its disk is bent up over the top and, fainter, under the bottom;
- * the near side crosses in front as a thin band that is brighter on the approaching side; a black shadow
- * edged by the photon ring; and a soft bloom over all of it.
+ * The accretion disk: a flat ring of light around the hole, seen almost edge-on, so it is drawn as an
+ * elliptical ring. Only one half is drawn per call: the far half goes behind the shadow, the near half
+ * crosses in front of it — one object wrapping around the hole, not a stripe laid on top.
+ */
+function disk(ctx: CanvasRenderingContext2D, R: number, t: number, near: boolean) {
+  const r0 = R * 1.3, r1 = R * 3.4;
+  ctx.save();
+  ctx.rotate(TILT);
+  ctx.beginPath();
+  if (near) ctx.rect(-r1 * 1.2, 0, r1 * 2.4, r1); else ctx.rect(-r1 * 1.2, -r1, r1 * 2.4, r1);
+  ctx.clip();
+  ctx.scale(1, FLAT);
+  ctx.beginPath();
+  ctx.arc(0, 0, r1, 0, TAU); ctx.arc(0, 0, r0, TAU, 0, true);
+  const g = ctx.createRadialGradient(0, 0, r0, 0, 0, r1);
+  g.addColorStop(0, `rgba(${HOT},1)`);
+  g.addColorStop(0.15, `rgba(${AMBER},0.95)`);
+  g.addColorStop(0.45, `rgba(${ORANGE},0.6)`);
+  g.addColorStop(0.75, `rgba(${RED},0.25)`);
+  g.addColorStop(1, `rgba(${RED},0)`);
+  ctx.fillStyle = g;
+  ctx.fill();
+  // the side turning toward us is brighter
+  ctx.globalCompositeOperation = 'lighter';
+  const d = ctx.createLinearGradient(-r1, 0, r1, 0);
+  d.addColorStop(0, `rgba(${HOT},0.45)`); d.addColorStop(0.45, `rgba(${HOT},0.1)`); d.addColorStop(1, `rgba(${HOT},0)`);
+  ctx.fillStyle = d;
+  ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  // matter streaming round
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = R * 0.05;
+  for (let i = 0; i < 7; i++) {
+    const r = r0 + ((r1 - r0) * (i + 0.5)) / 7;
+    ctx.strokeStyle = `rgba(${i % 2 ? HOT : AMBER},${0.35 * (1 - i / 8)})`;
+    ctx.setLineDash([r * 0.5, r * 0.18]);
+    ctx.lineDashOffset = -t * R * (3 - i * 0.3);
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+/**
+ * A Gargantua-style hole: a disk that wraps around it (far half behind, near half in front), the image of
+ * the far side bent up over the top and, fainter, under the bottom, a black shadow edged by the photon
+ * ring, and a soft bloom over all of it.
  */
 function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, tw: number) {
   ctx.save();
   ctx.translate(h.x, h.y);
-  ctx.rotate(-0.05);
   ctx.globalAlpha = tw;
 
   // bloom, wider than it is tall
@@ -113,12 +159,16 @@ function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, 
   ctx.restore();
 
   ctx.shadowColor = `rgba(${ORANGE},0.85)`;
-  ctx.shadowBlur = R * 0.9;
-  arch(ctx, R * 2.1, R * 1.9, R * 1.16, R * 1.1, Math.PI, TAU, 1); // over the top
-  arch(ctx, R * 1.55, R * 1.45, R * 1.12, R * 1.08, 0, Math.PI, 0.38); // under the bottom
+  ctx.shadowBlur = R * 0.7;
+  disk(ctx, R, t, false); // far half, behind everything else
+  ctx.shadowBlur = R * 0.6;
+  ctx.save();
+  ctx.rotate(TILT * 0.4);
+  arch(ctx, R * 1.62, R * 1.5, R * 1.05, R * 1.03, Math.PI, TAU, 1); // the far side, bent over the top
+  arch(ctx, R * 1.32, R * 1.28, R * 1.04, R * 1.02, 0.12, Math.PI - 0.12, 0.45); // and under the bottom
   ctx.shadowBlur = 0;
-  streaks(ctx, R, t, 1.25, 1.85, 0.92, Math.PI, TAU, 0.35);
-  streaks(ctx, R, -t, 1.18, 1.45, 0.95, 0.15, Math.PI - 0.15, 0.2);
+  streaks(ctx, R, t, 1.12, 1.5, 0.93, Math.PI, TAU, 0.4);
+  ctx.restore();
 
   // the shadow: nothing comes back from in here
   ctx.fillStyle = '#000';
@@ -129,28 +179,9 @@ function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, 
   ctx.lineWidth = Math.max(1, R * 0.03);
   ctx.beginPath(); ctx.arc(0, 0, R * 1.03, 0, TAU); ctx.stroke();
 
-  // the near side of the disk: a lens-shaped band across the front, brighter to the left
-  const L = R * 4.3;
-  ctx.shadowBlur = R * 0.8; ctx.shadowColor = `rgba(${ORANGE},0.9)`;
-  ctx.beginPath();
-  ctx.moveTo(-L, 0);
-  ctx.quadraticCurveTo(0, -R * 0.34, L, 0);
-  ctx.quadraticCurveTo(0, R * 0.38, -L, 0);
-  ctx.closePath();
-  const b = ctx.createLinearGradient(-L, 0, L, 0);
-  b.addColorStop(0, `rgba(${RED},0)`);
-  b.addColorStop(0.16, `rgba(${ORANGE},0.6)`);
-  b.addColorStop(0.36, `rgba(${HOT},1)`);
-  b.addColorStop(0.52, `rgba(${HOT},0.95)`);
-  b.addColorStop(0.68, `rgba(${AMBER},0.75)`);
-  b.addColorStop(0.86, `rgba(${ORANGE},0.3)`);
-  b.addColorStop(1, `rgba(${RED},0)`);
-  ctx.fillStyle = b;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  streaks(ctx, R, t * 1.4, 1.6, 3.6, 0.05, 0, TAU, 0.3);
-  ctx.fillStyle = `rgba(${HOT},0.95)`;
-  ctx.beginPath(); ctx.ellipse(-R * 0.2, R * 0.02, R * 2.4, R * 0.035, 0, 0, TAU); ctx.fill();
+  // the near half of the disk wraps round in front of the shadow
+  ctx.shadowBlur = R * 0.7; ctx.shadowColor = `rgba(${ORANGE},0.9)`;
+  disk(ctx, R, t, true);
   ctx.restore();
 }
 
@@ -235,7 +266,6 @@ export const blackhole: Material = {
         if (q >= 1) {
           falls.delete(l);
           h.eaten.push(l); h.quiet = w.t;
-          w.fx.ring(h.x, h.y, 'spark', fs * 0.22);
           w.sound.play('press');
         }
         continue;

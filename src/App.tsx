@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { MATERIALS, MAX_CHARS, PALETTES, PRESETS } from './engine/config';
 import { Stage } from './engine/stage';
 import { fileName, savePng } from './engine/exporter';
-import type { MaterialId, Settings } from './engine/types';
+import type { Settings } from './engine/types';
 import { Panel } from './ui/Panel';
 import { QuickEditor } from './ui/QuickEditor';
+import { Icon } from './ui/Icon';
 
 const INITIAL: Settings = { word: 'hello', material: 'jelly', intensity: 0.5, motion: 0.5, palette: 'night' };
 
@@ -18,39 +19,49 @@ type ExportState = 'idle' | 'working' | 'saved' | 'failed';
 
 export function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ghostRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<Stage | null>(null);
   const [settings, setSettings] = useState<Settings>(INITIAL);
-  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 1099px)').matches);
   const [coarse, setCoarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
   const [panelOpen, setPanelOpen] = useState(() => !window.matchMedia('(max-width: 1099px)').matches);
   const [sound, setSound] = useState(false);
   const [hint, setHint] = useState(true);
+  const [typing, setTyping] = useState(false);
   const [editor, setEditor] = useState<{ x: number; y: number } | null>(null);
   const [exporting, setExporting] = useState<ExportState>('idle');
-  const panelOpenRef = useRef(panelOpen);
-  panelOpenRef.current = panelOpen;
+  const coarseRef = useRef(coarse);
+  coarseRef.current = coarse;
 
   const patch = useCallback((p: Partial<Settings>) => setSettings((s) => ({ ...s, ...p })), []);
+
+  /** Hands the keyboard to the stage: the word is edited in place, with a caret after the last letter. */
+  const focusStageText = useCallback(() => {
+    const g = ghostRef.current;
+    if (!g) return;
+    g.focus({ preventScroll: true });
+    const n = g.value.length;
+    g.setSelectionRange(n, n);
+  }, []);
 
   // One engine for the life of the page; React only hands it settings.
   useEffect(() => {
     const stage = new Stage(canvasRef.current!, INITIAL, {
       onInteract: () => setHint(false),
-      onEmptyDoubleTap: (x, y) => { if (!panelOpenRef.current) setEditor({ x, y }); },
+      // touch has no keyboard until a field is focused, so it gets a small editor; a mouse just gets the caret
+      onEmptyDoubleTap: (x, y) => { if (coarseRef.current) setEditor({ x, y }); else focusStageText(); },
     });
     stageRef.current = stage;
     return () => { stage.destroy(); stageRef.current = null; };
-  }, []);
+  }, [focusStageText]);
 
   useEffect(() => { stageRef.current?.update(settings); }, [settings]);
+  useEffect(() => { stageRef.current?.setCaret(typing); }, [typing]);
 
   useEffect(() => {
-    const mqN = window.matchMedia('(max-width: 1099px)');
     const mqC = window.matchMedia('(pointer: coarse)');
-    const onN = () => setNarrow(mqN.matches);
     const onC = () => setCoarse(mqC.matches);
-    mqN.addEventListener('change', onN); mqC.addEventListener('change', onC);
-    return () => { mqN.removeEventListener('change', onN); mqC.removeEventListener('change', onC); };
+    mqC.addEventListener('change', onC);
+    return () => mqC.removeEventListener('change', onC);
   }, []);
 
   const reset = useCallback(() => stageRef.current?.reset(), []);
@@ -62,6 +73,13 @@ export function App() {
       return { ...s, ...pick };
     });
     stageRef.current?.reset();
+  }, []);
+
+  const cycleMaterial = useCallback((dir: 1 | -1) => {
+    setSettings((s) => {
+      const i = MATERIALS.findIndex((m) => m.id === s.material);
+      return { ...s, material: MATERIALS[(i + dir + MATERIALS.length) % MATERIALS.length].id };
+    });
   }, []);
 
   const toggleSound = () => {
@@ -86,18 +104,35 @@ export function App() {
 
   const closeEditor = useCallback(() => { setEditor(null); canvasRef.current?.focus(); }, []);
 
-  // Playground shortcuts. They stand down whenever a text field has focus.
+  /** Keys that never produce text, shared by the page and the stage's own text field. Returns true when handled. */
+  const command = useCallback((key: string) => {
+    if (key === 'Escape') setPanelOpen((o) => !o);
+    else if (key === 'ArrowRight') cycleMaterial(1);
+    else if (key === 'ArrowLeft') cycleMaterial(-1);
+    else if (key === 'Enter') reset();
+    else return false;
+    return true;
+  }, [cycleMaterial, reset]);
+
+  // Typing anywhere on the page writes on the stage. Other text fields keep their own keys.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
-      const k = e.key.toLowerCase();
-      if (k === 'h') { setPanelOpen((o) => !o); e.preventDefault(); }
-      else if (k === 'r') reset();
-      else if (k >= '1' && k <= '4') patch({ material: MATERIALS[Number(k) - 1].id as MaterialId });
+      const onButton = e.target instanceof HTMLElement && e.target.tagName === 'BUTTON';
+      if (onButton && (e.key === 'Enter' || e.key === ' ')) return; // let the button do its thing
+      if (command(e.key)) { e.preventDefault(); return; }
+      const text = e.key === 'Backspace' || e.key === 'Dead' || e.key === 'Process' || Array.from(e.key).length === 1;
+      // Focusing the field during keydown routes this very keystroke into it, so accents and IME work too.
+      if (text) { setHint(false); focusStageText(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [patch, reset]);
+  }, [command, focusStageText]);
+
+  const onGhostKey = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing) return;
+    if (command(e.key)) e.preventDefault();
+  };
 
   const palette = PALETTES.find((p) => p.id === settings.palette) ?? PALETTES[0];
   const material = MATERIALS.find((m) => m.id === settings.material)!;
@@ -109,6 +144,7 @@ export function App() {
 
   const word = settings.word.trim();
   const exportLabel = { idle: 'Export PNG', working: 'Rendering…', saved: 'Saved', failed: 'Export failed' }[exporting];
+  const gestures = [coarse ? 'Double-tap to edit' : 'Type to rewrite', ...(coarse ? material.touchHelp : material.help).split(' · ')];
 
   return (
     <div className="app" style={vars} data-panel={panelOpen ? 'open' : 'closed'}>
@@ -120,42 +156,56 @@ export function App() {
         aria-label={word ? `The word “${word}”, set in large letters that behave like ${material.label.toLowerCase()}.` : 'An empty stage. Type a word to begin.'}
       />
 
+      {/* Invisible field behind the stage's caret: it is what actually receives the keystrokes. */}
+      <input
+        ref={ghostRef} className="ghost" value={settings.word} aria-label="Word on the stage" tabIndex={-1}
+        maxLength={MAX_CHARS * 2} autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
+        onChange={(e) => patch({ word: cleanWord(e.target.value) })}
+        onKeyDown={onGhostKey}
+        onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
+      />
+
       <header className="corner tl">
         <h1>Living Letters</h1>
-        <p>A playground for words.</p>
+        <p>A playground for words</p>
       </header>
 
       <div className="corner tr">
-        <button type="button" className="chip" aria-pressed={sound} onClick={toggleSound}>
+        <button type="button" className="chip glass" aria-pressed={sound} onClick={toggleSound}>
+          <Icon name={sound ? 'sound' : 'mute'} />
           Sound {sound ? 'on' : 'off'}
         </button>
         <button
-          type="button" className="chip only-wide" aria-expanded={panelOpen} aria-controls="panel"
+          type="button" className="chip glass only-wide" aria-expanded={panelOpen} aria-controls="panel"
           onClick={() => setPanelOpen((o) => !o)}
         >
-          {panelOpen ? 'Hide panel' : 'Show panel'}
+          <Icon name="sliders" />
+          {panelOpen ? 'Hide controls' : 'Controls'}
         </button>
       </div>
 
-      {!word && <p className="empty">Type a word to bring it to life.</p>}
+      {!word && <p className="empty">{coarse ? 'Double-tap to write a word' : 'Type a word to bring it to life'}</p>}
       <p className="hint" data-show={hint && !!word} aria-hidden={!hint}>
-        {coarse ? 'Drag to touch. Tap to surprise.' : 'Move to touch. Click to surprise.'}
+        {coarse ? 'Touch the letters to play. Double-tap to change the word.' : 'Just start typing, or play with the letters.'}
       </p>
 
-      <p className="corner bl help" aria-live="polite">
-        {coarse ? material.touchHelp : material.help}
-        {!panelOpen && <span className="help-more">{coarse ? 'Double-tap empty space to retype' : 'Double-click empty space to retype'}</span>}
-      </p>
+      <ul className="corner bl dock glass" aria-live="polite" aria-label="How to play">
+        {gestures.map((g) => <li key={g}>{g}</li>)}
+      </ul>
 
       <div className="corner br">
-        <button type="button" className="chip" onClick={reset}>Reset</button>
+        <button type="button" className="chip glass" onClick={reset}>
+          <Icon name="reset" />
+          Reset
+        </button>
         <button type="button" className="chip solid" onClick={exportPng} disabled={!word || exporting === 'working'}>
+          <Icon name="download" />
           {exportLabel}
         </button>
       </div>
 
       <Panel
-        open={panelOpen} narrow={narrow} settings={settings}
+        open={panelOpen} settings={settings}
         onChange={patch} onToggle={() => setPanelOpen((o) => !o)}
         onReset={reset} onSurprise={surprise}
       />

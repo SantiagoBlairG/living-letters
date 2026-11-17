@@ -1,6 +1,6 @@
 import type { Ambient, EdgeHit, Letter, MaterialId, Pointer, Settings, World } from './types';
 import { PALETTES } from './config';
-import { LiveColors } from './color';
+import { LiveColors, css } from './color';
 import { clearGlyphs, fontOf, getGlyph, inGlyph, layoutWord } from './layout';
 import { calm, integrate, makeLetter, resetInputs } from './simulation';
 import { Effects } from './effects';
@@ -46,6 +46,9 @@ export class Stage implements World {
   private lastEmptyTap = { t: -10, x: 0, y: 0 };
   private downHit: Letter | null = null;
   private amb0: Ambient = { x: 0, y: 0, r: 0, sx: 0, sy: 0 };
+  private caretOn = false;
+  private caretT = 0; // time of the last keystroke, so the caret stays solid while typing
+  private caretA = 0;
 
   constructor(private canvas: HTMLCanvasElement, settings: Settings, private events: StageEvents = {}) {
     this.ctx = canvas.getContext('2d')!;
@@ -99,7 +102,7 @@ export class Stage implements World {
       this.cursor.setMaterial(next.material);
     }
     this.applyDials();
-    if (next.word !== prev.word && this.ready) this.relayout(true);
+    if (next.word !== prev.word) { this.caretT = this.t; if (this.ready) this.relayout(true); }
   }
 
   /** Back to rest: positions, deformation and decorations. Word and settings stay. */
@@ -115,6 +118,9 @@ export class Stage implements World {
   }
 
   exportPng() { return exportBlob(this); }
+
+  /** Shows a text caret after the word while the stage is taking keystrokes. Never part of an export. */
+  setCaret(on: boolean) { this.caretOn = on; this.caretT = this.t; }
 
   destroy() {
     cancelAnimationFrame(this.raf);
@@ -301,12 +307,33 @@ export class Stage implements World {
     this.fx.update(dt);
     this.colors.update(dt);
     this.cursor.update(dt, p, showCursor);
+    this.caretA += ((this.caretOn ? 1 : 0) - this.caretA) * (1 - Math.exp(-dt * 14));
     this.draw();
   };
 
   private draw() {
     renderScene(this.ctx, this, this.dpr);
+    this.drawCaret();
     this.cursor.draw(this.ctx, this.colors.now);
+  }
+
+  /** A blinking bar after the last letter; it rides along with that letter's motion. */
+  private drawCaret() {
+    if (this.caretA < 0.02) return;
+    const since = this.t - this.caretT;
+    const blink = since < 0.6 ? 1 : 0.5 + 0.5 * Math.cos((since - 0.6) * Math.PI * 1.7);
+    const ctx = this.ctx, fs = this.fs;
+    const last = this.letters[this.letters.length - 1];
+    const x = last ? last.bx + last.adv / 2 + last.ox + fs * 0.05 : this.W / 2;
+    const y = this.baseline + (last ? last.oy : 0);
+    const w = Math.max(2, fs * 0.022);
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.globalAlpha = this.caretA * (0.15 + 0.85 * blink);
+    ctx.fillStyle = css(this.colors.now.spark);
+    ctx.beginPath();
+    ctx.roundRect(x, y - fs * 0.74, w, fs * 0.8, w / 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
   }
 
   private onVisibility = () => {

@@ -22,10 +22,13 @@ npm run build:single   # one self-contained file: dist-single/index.html
 
 Node 20+ is enough. There is no backend.
 
-## Shortcuts
+## Typing and shortcuts
 
-`H` hide/show the panel · `1`–`4` materials · `R` reset · double-click empty stage (panel hidden) to retype · `Esc` closes the editor.
-Shortcuts are suspended while a text field has focus.
+Just type: any key writes straight onto the stage, with a caret after the last letter, whether the panel is open or not.
+On touch screens, double-tap empty stage to edit the word.
+
+`Esc` hide/show the controls · `←` `→` switch material · `Enter` reset the scene.
+Text fields in the panel keep their own keys.
 
 ## How it is put together
 
@@ -51,7 +54,8 @@ and plant anchoring use a sampled alpha mask of each glyph, not its bounding box
 
 ## Fonts
 
-Bundled locally, both under the SIL Open Font License 1.1 (see `licenses/`):
+Bundled locally, all under the SIL Open Font License 1.1 (see `licenses/`):
 
 - **Gloock** — the word. Copyright 2022 The Gloock Project Authors.
-- **IBM Plex Mono** — the interface. Copyright © 2017 IBM Corp.
+- **Figtree** — the interface. Copyright 2022 The Figtree Project Authors.
+- **IBM Plex Mono** — key caps. Copyright © 2017 IBM Corp.

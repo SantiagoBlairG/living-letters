@@ -1,5 +1,15 @@
 import type { Letter, Material, World } from '../types';
 import { clamp, tuneF } from '../simulation';
+import spriteUrl from '../../assets/blackhole.webp';
+
+/**
+ * The rendered hole (src/assets/blackhole.webp): its black was turned into transparency, so it works on any
+ * background. Its shadow is centred at (cx, cy) with radius r, in the sprite's own pixels.
+ */
+const SPRITE = { W: 1400, H: 781, cx: 703, cy: 394, r: 151 };
+const sprite = typeof Image !== 'undefined' ? new Image() : null;
+let spriteReady = false;
+if (sprite) { sprite.src = spriteUrl; sprite.decode().then(() => { spriteReady = true; }, () => {}); }
 
 /**
  * Gravity at its most extreme. The pointer is a small black hole that bends letters toward it.
@@ -275,6 +285,35 @@ function drawHole(ctx: CanvasRenderingContext2D, h: Hole, R: number, t: number, 
   ctx.restore();
 }
 
+/**
+ * The hole drawn from the rendered sprite, with the effects around it kept: the bloom, a black shadow
+ * underneath (so it stays black on light palettes), a slow sway, and a shimmer of extra light so it never
+ * sits still.
+ */
+function drawSprite(ctx: CanvasRenderingContext2D, img: HTMLImageElement, R: number, t: number, tw: number) {
+  const k = R / SPRITE.r;
+  ctx.save();
+  ctx.globalAlpha = tw;
+  ctx.save();
+  ctx.scale(1.7, 1);
+  const g = ctx.createRadialGradient(0, 0, R, 0, 0, R * 3.4);
+  g.addColorStop(0, `rgba(${ORANGE},0.28)`); g.addColorStop(0.45, `rgba(${RED},0.08)`); g.addColorStop(1, `rgba(${RED},0)`);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, R * 3.4, 0, TAU); ctx.fill();
+  ctx.restore();
+  const s = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.4);
+  s.addColorStop(0, '#000'); s.addColorStop(0.76, '#000'); s.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = s;
+  ctx.beginPath(); ctx.arc(0, 0, R * 1.4, 0, TAU); ctx.fill();
+  ctx.rotate(Math.sin(t * 0.5) * 0.02);
+  ctx.drawImage(img, -SPRITE.cx * k, -SPRITE.cy * k, SPRITE.W * k, SPRITE.H * k);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = tw * (0.1 + 0.08 * Math.sin(t * 2.3));
+  const k2 = k * 1.012;
+  ctx.drawImage(img, -SPRITE.cx * k2, -SPRITE.cy * k2, SPRITE.W * k2, SPRITE.H * k2);
+  ctx.restore();
+}
+
 export const blackhole: Material = {
   id: 'blackhole',
   accent: 'flower',
@@ -444,7 +483,11 @@ export const blackhole: Material = {
       const grow = h.held ? 1 : clamp((w.t - h.t0) / 0.25, 0, 1);
       const R = fs * (0.075 + 0.045 * h.mass) * grow * (1 - wt) * (h.devoured ? 1.5 : 1);
       if (R < 1) continue;
-      drawHole(ctx, h, R, h.spin, 1 - wt);
+      if (sprite && spriteReady) { // the rendered hole; the drawn one only while the image is still loading
+        ctx.save(); ctx.translate(h.x, h.y);
+        drawSprite(ctx, sprite, R * 1.3, h.spin, 1 - wt); // a touch bigger: the render carries more detail
+        ctx.restore();
+      } else drawHole(ctx, h, R, h.spin, 1 - wt);
     }
   },
 };

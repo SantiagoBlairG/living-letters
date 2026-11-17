@@ -11,7 +11,14 @@ export function renderScene(ctx: CanvasRenderingContext2D, st: Stage, scale: num
   ctx.fillStyle = css(c.bg);
   ctx.fillRect(0, 0, st.W, st.H);
 
-  const accent = c[BEHAVIORS[st.material].accent];
+  const mat = BEHAVIORS[st.material];
+  if (mat.back) {
+    mat.back(ctx, st, c);
+    ctx.globalAlpha = 1;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  }
+
+  const accent = c[mat.accent];
   const liftPx = st.lift * st.fs;
 
   // Magnet: thin lines of tension while the field is held

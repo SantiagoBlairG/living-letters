@@ -19,6 +19,8 @@ function Glyph({ id }: { id: MaterialId }) {
       {id === 'jelly' && (<><ellipse cx="16" cy="17" rx="11" ry="9" /><circle cx="14" cy="16" r="2.8" fill="currentColor" stroke="none" /></>)}
       {id === 'magnet' && (<><path d="M6 13a11 11 0 0 1 14-7.5M26 19a11 11 0 0 1-14 7.5" /><circle cx="16" cy="16" r="3.4" fill="currentColor" stroke="none" /></>)}
       {id === 'bloom' && (<g stroke="none" fill="currentColor"><path d="M16 9c4 3 4 10 0 14c-4-4-4-11 0-14Z" /><path d="M14 22C9 22 6 19 5 15c5 0 8 3 9 7ZM18 22c5 0 8-3 9-7c-5 0-8 3-9 7Z" opacity=".55" /></g>)}
+      {id === 'balloon' && (<><ellipse cx="16" cy="12" rx="7.5" ry="8.5" fill="currentColor" stroke="none" /><path d="M16 21c-2 2 2 3 0 5s1 2 0 4" /></>)}
+      {id === 'wave' && (<><path d="M3 13c3.2-3 6.3-3 9.5 0s6.3 3 9.5 0 4.8-2.5 7-1" /><path d="M3 21c3.2-3 6.3-3 9.5 0s6.3 3 9.5 0 4.8-2.5 7-1" opacity=".55" /></>)}
       {id === 'gravity' && (<><path d="M16 5v13M10.5 13l5.5 5.5 5.5-5.5" strokeLinejoin="round" /><path d="M6 26h20" /></>)}
       {id === 'float' && (<><circle cx="21" cy="11" r="3.4" fill="currentColor" stroke="none" /><path d="M17 15C12 19 8 21 4 26M19 18c-3 3-5 5-7 8" opacity=".7" /></>)}
     </svg>
@@ -27,12 +29,13 @@ function Glyph({ id }: { id: MaterialId }) {
 
 export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise }: Props) {
   const count = Array.from(settings.word).length;
+  const current = MATERIALS.find((m) => m.id === settings.material)!;
   return (
     <aside id="panel" className="panel glass" data-open={open} aria-label="Controls">
       <button type="button" className="handle" onClick={onToggle} aria-expanded={open}>
         <span className="grip" aria-hidden="true" />
         <span>{open ? 'Close controls' : 'Controls'}</span>
-        <span className="handle-now">{MATERIALS.find((m) => m.id === settings.material)!.label}</span>
+        <span className="handle-now">{current.label}</span>
       </button>
 
       <div className="panel-body" inert={!open}>
@@ -63,13 +66,13 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
           <div className="row"><span id="mat-label">Material</span><span className="dim only-wide"><kbd>←</kbd><kbd>→</kbd></span></div>
           <div className="materials" role="radiogroup" aria-labelledby="mat-label">
             {MATERIALS.map((m) => (
-              <button key={m.id} type="button" role="radio" aria-checked={settings.material === m.id} onClick={() => onChange({ material: m.id })}>
+              <button key={m.id} type="button" role="radio" aria-checked={settings.material === m.id} title={m.note} onClick={() => onChange({ material: m.id })}>
                 <Glyph id={m.id} />
                 <span className="m-name">{m.label}</span>
-                <span className="m-note">{m.note}</span>
               </button>
             ))}
           </div>
+          <p className="m-desc" aria-live="polite"><strong>{current.label}</strong>{current.note}</p>
         </section>
 
         <section className="sliders">

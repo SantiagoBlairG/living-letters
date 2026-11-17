@@ -2,8 +2,9 @@ import type { Glyph } from './layout';
 import type { Effects } from './effects';
 import type { Plants } from './plants';
 import type { Sound } from './audio';
+import type { RGB } from './color';
 
-export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity';
+export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity' | 'balloon' | 'wave';
 export type ColorKey = 'bg' | 'ink' | 'stem' | 'flower' | 'spark';
 
 export interface Palette {
@@ -119,4 +120,6 @@ export interface Material {
   enter?(w: World): void;
   /** Replaces the default "back to rest" when the scene is reset. */
   reset?(w: World): void;
+  /** Draws under the letters, in stage pixels (strings, ripples…). Also part of exports. */
+  back?(ctx: CanvasRenderingContext2D, w: World, colors: Record<ColorKey, RGB>): void;
 }

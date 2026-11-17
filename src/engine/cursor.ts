@@ -95,6 +95,30 @@ export class CursorView {
       ctx.bezierCurveTo(6 * k, -3, 5 * k, 6, 0, 8 * k);
       ctx.bezierCurveTo(-5 * k, 6, -6 * k, -3, 0, -8 * k);
       ctx.fill();
+    } else if (mat === 'balloon') {
+      // a little balloon on a string that trails behind the hand
+      ctx.rotate(Math.max(-0.5, Math.min(0.5, -this.vx * 0.0009)));
+      const k = 1 + press * 0.25;
+      ctx.strokeStyle = css(colors.ink, 0.6); ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(0, 5 * k);
+      ctx.quadraticCurveTo(3 + Math.sin(this.spin * 2) * 2, 11, 0, 17); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, -3, 7 * k, 8.5 * k, 0, 0, 6.2832);
+      ctx.fillStyle = css(colors.flower); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-2.4 * k, -6 * k, 1.6, 2.6, -0.5, 0, 6.2832);
+      ctx.fillStyle = css(colors.bg, 0.3); ctx.fill();
+    } else if (mat === 'wave') {
+      // a falling drop; pressing shows the ring it is about to make
+      if (press > 0.05) {
+        ctx.strokeStyle = css(colors.stem, Math.min(1, press) * 0.7); ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(0, 0, 11 + press * 7, 0, 6.2832); ctx.stroke();
+      }
+      const k = 1 - press * 0.2;
+      ctx.fillStyle = css(colors.stem);
+      ctx.beginPath(); ctx.moveTo(0, -10 * k);
+      ctx.bezierCurveTo(3 * k, -5 * k, 6 * k, -1 * k, 6 * k, 2 * k);
+      ctx.arc(0, 2 * k, 6 * k, 0, Math.PI);
+      ctx.bezierCurveTo(-6 * k, -1 * k, -3 * k, -5 * k, 0, -10 * k);
+      ctx.fill();
     } else if (mat === 'gravity') {
       // a solid ball: the thing you shove letters with
       const r = 9 - press * 2.5;

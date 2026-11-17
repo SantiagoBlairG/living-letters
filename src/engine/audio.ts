@@ -1,8 +1,8 @@
 /** Tiny synthesized sounds. Nothing is created until the user turns sound on. */
 
-export type SoundName = 'press' | 'pop' | 'boing' | 'pulse' | 'sprout' | 'flower' | 'gust' | 'thud' | 'flip';
+export type SoundName = 'press' | 'pop' | 'boing' | 'pulse' | 'sprout' | 'flower' | 'gust' | 'thud' | 'flip' | 'bang' | 'squeak' | 'drip';
 
-const GAP: Record<SoundName, number> = { press: 90, pop: 90, boing: 120, pulse: 140, sprout: 130, flower: 160, gust: 180, thud: 70, flip: 200 };
+const GAP: Record<SoundName, number> = { press: 90, pop: 90, boing: 120, pulse: 140, sprout: 130, flower: 160, gust: 180, thud: 70, flip: 200, bang: 90, squeak: 150, drip: 110 };
 const SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
 
 export class Sound {
@@ -31,6 +31,16 @@ export class Sound {
     }
   }
 
+  private noiseBuf() {
+    const ac = this.ac!;
+    if (!this.noise) {
+      this.noise = ac.createBuffer(1, ac.sampleRate * 0.5, ac.sampleRate);
+      const d = this.noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return this.noise;
+  }
+
   private tone(type: OscillatorType, f0: number, f1: number, dur: number, vol: number, when = 0) {
     const ac = this.ac!, t = ac.currentTime + when;
     const o = ac.createOscillator(), g = ac.createGain();
@@ -55,6 +65,20 @@ export class Sound {
       case 'pop': this.tone('sine', 190, 520, 0.07, 0.4 * v); this.tone('sine', 520, 210, 0.2, 0.35 * v, 0.06); break;
       case 'boing': this.tone('sine', 150, 330, 0.12, 0.3 * v); this.tone('sine', 330, 200, 0.22, 0.2 * v, 0.1); break;
       case 'pulse': this.tone('triangle', 130, 46, 0.28, 0.6 * v); this.tone('square', 900, 240, 0.07, 0.05 * v); break;
+      case 'bang': {
+        const ac = this.ac, t = ac.currentTime;
+        const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+        src.buffer = this.noiseBuf();
+        f.type = 'highpass'; f.frequency.value = 900;
+        g.gain.setValueAtTime(0.6 * v, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+        src.connect(f).connect(g).connect(this.out);
+        src.start(t); src.stop(t + 0.16);
+        this.tone('sine', 140, 45, 0.16, 0.5 * v);
+        break;
+      }
+      case 'squeak': this.tone('triangle', 420 + amount * 520, 470 + amount * 560, 0.11, 0.07); break;
+      case 'drip': this.tone('sine', 360, 1250, 0.08, 0.32 * v); this.tone('sine', 900, 620, 0.14, 0.12 * v, 0.06); break;
       case 'thud': this.tone('sine', 150, 48, 0.13, 0.55 * v); break;
       case 'flip': this.tone('triangle', 620, 150, 0.22, 0.3 * v); this.tone('sine', 150, 420, 0.2, 0.2 * v, 0.12); break;
       case 'sprout': this.tone('sine', SCALE[(Math.random() * SCALE.length) | 0] * 2, 1400, 0.06, 0.1 * v); break;

@@ -23,12 +23,17 @@ export interface MaterialInfo {
 
 export const MATERIALS: MaterialInfo[] = [
   {
-    id: 'jelly', label: 'Jelly', note: 'Soft, elastic',
+    id: 'jelly', label: 'Jelly', note: 'Soft and elastic',
     help: 'Hover to push · Click to bounce · Drag to stretch',
     touchHelp: 'Swipe to push · Tap to bounce · Drag a letter to stretch',
   },
   {
-    id: 'magnet', label: 'Magnet', note: 'Pull, pulse',
+    id: 'balloon', label: 'Balloon', note: 'Inflates until it pops',
+    help: 'Hover to inflate · Click to pop · Drag to stretch the string',
+    touchHelp: 'Hold a letter to inflate · Tap to pop · Drag to stretch',
+  },
+  {
+    id: 'magnet', label: 'Magnet', note: 'Pulls and pulses',
     help: 'Hover to attract · Click to pulse · Hold to pull harder',
     touchHelp: 'Tap to pulse · Touch and hold to pull · Drag to move the field',
   },
@@ -43,7 +48,12 @@ export const MATERIALS: MaterialInfo[] = [
     touchHelp: 'Swipe to make a current · Tap for a gust · Drag a letter to tow',
   },
   {
-    id: 'gravity', label: 'Gravity', note: 'Falls, piles up',
+    id: 'wave', label: 'Wave', note: 'Ripples like water',
+    help: 'Hover to rock · Click to drop · Drag to leave a wake',
+    touchHelp: 'Tap to drop · Drag to leave a wake',
+  },
+  {
+    id: 'gravity', label: 'Gravity', note: 'Falls and piles up',
     help: 'Hover to shove · Click to flip gravity · Drag to throw',
     touchHelp: 'Swipe to shove · Tap to flip gravity · Drag a letter to throw',
   },
@@ -68,4 +78,8 @@ export const PRESETS: { word: string; material: MaterialId; palette: string }[] 
   { word: 'tumble', material: 'gravity', palette: 'acid' },
   { word: 'heavy', material: 'gravity', palette: 'ember' },
   { word: 'oops', material: 'gravity', palette: 'cobalt' },
+  { word: 'party', material: 'balloon', palette: 'paper' },
+  { word: 'pop!', material: 'balloon', palette: 'acid' },
+  { word: 'ocean', material: 'wave', palette: 'cobalt' },
+  { word: 'ola', material: 'wave', palette: 'night' },
 ];

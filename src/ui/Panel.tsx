@@ -153,6 +153,10 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
               )}
             </div>
           )}
+          <label className="switch backdrop-switch">
+            <input type="checkbox" checked={settings.backdrop} onChange={(e) => onChange({ backdrop: e.target.checked })} />
+            <span>Background effect <span className="dim">· follows the material</span></span>
+          </label>
         </section>
 
         <section className="actions">

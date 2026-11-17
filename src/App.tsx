@@ -22,7 +22,7 @@ function frameRect(ratio: number, vw: number, vh: number, panelOpen: boolean) {
 
 const INITIAL: Settings = {
   word: 'hello', material: 'jelly', intensity: 0.5, motion: 0.5, palette: 'night',
-  custom: DEFAULT_CUSTOM, font: 'serif', tune: {}, element: 'fire',
+  custom: DEFAULT_CUSTOM, font: 'serif', tune: {}, element: 'fire', backdrop: true,
 };
 
 /**

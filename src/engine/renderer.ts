@@ -17,6 +17,7 @@ export function renderScene(ctx: CanvasRenderingContext2D, st: Stage, scale: num
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, st.W, st.H);
   } else { ctx.fillStyle = css(c.bg); ctx.fillRect(0, 0, st.W, st.H); }
+  if (st.backdropOn && !transparent) st.backdrop.draw(ctx, c);
 
   const mat = BEHAVIORS[st.material];
   if (mat.back) {

@@ -244,6 +244,7 @@ kbd {
 }
 .palettes .p-custom .p-a { position: static; font: 600 22px/1 var(--sans); text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
 
+.backdrop-switch { display: inline-flex; margin-top: 12px; }
 .custom { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
 .swatch, .switch {
   display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 5px 12px 5px 6px; border-radius: 999px;

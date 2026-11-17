@@ -10,6 +10,7 @@ import { CursorView } from './cursor';
 import { BEHAVIORS } from './materials';
 import { renderScene } from './renderer';
 import { exportBlob } from './exporter';
+import { Backdrop } from './backdrop';
 import type { FormatId } from './exporter';
 
 export interface StageEvents {
@@ -36,6 +37,8 @@ export class Stage implements World {
   };
   fx = new Effects();
   plants = new Plants();
+  backdrop = new Backdrop();
+  backdropOn = true;
   sound = new Sound();
   colors: LiveColors;
   cursor: CursorView;
@@ -68,6 +71,7 @@ export class Stage implements World {
     this.useFace(settings.font);
     this.material = settings.material;
     this.element = settings.element;
+    this.backdropOn = settings.backdrop;
     this.lift = BEHAVIORS[this.material].spring.lift;
     this.colors = new LiveColors(this.palette());
     this.cursor = new CursorView(this.material);
@@ -110,6 +114,7 @@ export class Stage implements World {
     this.settings = { ...next };
     if (next.palette !== prev.palette || next.custom !== prev.custom) this.colors.set(this.palette());
     if (next.font !== prev.font) this.changeFont(next.font);
+    this.backdropOn = next.backdrop;
     if (next.element !== prev.element) { this.element = next.element; this.cursor.element = next.element; }
     if (next.material !== prev.material) {
       // leave the old material cleanly: no leftover grabs, queued impulses or momentum
@@ -383,6 +388,7 @@ export class Stage implements World {
     p.near = near;
 
     this.plants.update(dt);
+    if (this.backdropOn) this.backdrop.update(dt, this);
     this.fx.update(dt);
     this.colors.update(dt);
     this.cursor.update(dt, p, showCursor);

@@ -37,6 +37,7 @@ export interface Settings {
   custom: CustomColors;
   font: string;
   element: ElementId; // for the Elements material
+  backdrop: boolean; // the faint background in the spirit of the material
   /** each material's own dial, 0..1; 0.5 is neutral */
   tune: Partial<Record<MaterialId, number>>;
 }

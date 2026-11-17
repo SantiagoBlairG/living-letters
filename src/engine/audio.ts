@@ -1,8 +1,8 @@
 /** Tiny synthesized sounds. Nothing is created until the user turns sound on. */
 
-export type SoundName = 'press' | 'pop' | 'boing' | 'pulse' | 'sprout' | 'flower' | 'gust';
+export type SoundName = 'press' | 'pop' | 'boing' | 'pulse' | 'sprout' | 'flower' | 'gust' | 'thud' | 'flip';
 
-const GAP: Record<SoundName, number> = { press: 90, pop: 90, boing: 120, pulse: 140, sprout: 130, flower: 160, gust: 180 };
+const GAP: Record<SoundName, number> = { press: 90, pop: 90, boing: 120, pulse: 140, sprout: 130, flower: 160, gust: 180, thud: 70, flip: 200 };
 const SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
 
 export class Sound {
@@ -55,6 +55,8 @@ export class Sound {
       case 'pop': this.tone('sine', 190, 520, 0.07, 0.4 * v); this.tone('sine', 520, 210, 0.2, 0.35 * v, 0.06); break;
       case 'boing': this.tone('sine', 150, 330, 0.12, 0.3 * v); this.tone('sine', 330, 200, 0.22, 0.2 * v, 0.1); break;
       case 'pulse': this.tone('triangle', 130, 46, 0.28, 0.6 * v); this.tone('square', 900, 240, 0.07, 0.05 * v); break;
+      case 'thud': this.tone('sine', 150, 48, 0.13, 0.55 * v); break;
+      case 'flip': this.tone('triangle', 620, 150, 0.22, 0.3 * v); this.tone('sine', 150, 420, 0.2, 0.2 * v, 0.12); break;
       case 'sprout': this.tone('sine', SCALE[(Math.random() * SCALE.length) | 0] * 2, 1400, 0.06, 0.1 * v); break;
       case 'flower': {
         const i = (Math.random() * 3) | 0;

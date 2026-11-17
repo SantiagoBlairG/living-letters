@@ -95,6 +95,13 @@ export class CursorView {
       ctx.bezierCurveTo(6 * k, -3, 5 * k, 6, 0, 8 * k);
       ctx.bezierCurveTo(-5 * k, 6, -6 * k, -3, 0, -8 * k);
       ctx.fill();
+    } else if (mat === 'gravity') {
+      // a solid ball: the thing you shove letters with
+      const r = 9 - press * 2.5;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.2832);
+      ctx.fillStyle = css(colors.spark); ctx.fill();
+      ctx.beginPath(); ctx.arc(-r * 0.3, -r * 0.3, r * 0.28, 0, 6.2832);
+      ctx.fillStyle = css(colors.bg, 0.35); ctx.fill();
     } else {
       ctx.beginPath(); ctx.arc(0, 0, 3.8 + press * 1.6, 0, 6.2832);
       ctx.fillStyle = css(colors.ink); ctx.fill();

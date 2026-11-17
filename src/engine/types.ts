@@ -3,7 +3,7 @@ import type { Effects } from './effects';
 import type { Plants } from './plants';
 import type { Sound } from './audio';
 
-export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float';
+export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity';
 export type ColorKey = 'bg' | 'ink' | 'stem' | 'flower' | 'spark';
 
 export interface Palette {
@@ -72,6 +72,8 @@ export interface SpringSpec {
   sk: number; sc: number; // scale + skew
   limit: number; // max displacement, in em
   lift: number; // pivot height above the baseline, in em
+  /** Letters are free bodies: the material moves and turns them itself, nothing pulls them home. */
+  free?: boolean;
 }
 
 export interface EdgeHit {
@@ -113,4 +115,8 @@ export interface Material {
   update(w: World, dt: number): void;
   down(w: World, hit: Letter | null): void;
   up(w: World, hit: Letter | null, click: boolean): void;
+  /** Called when this material becomes the active one. */
+  enter?(w: World): void;
+  /** Replaces the default "back to rest" when the scene is reset. */
+  reset?(w: World): void;
 }

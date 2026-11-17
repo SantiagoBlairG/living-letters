@@ -66,6 +66,8 @@ export interface Glyph {
   alpha: Uint8Array;
   /** silhouette points as [x, y, nx, ny] in em, origin at the pen position on the baseline */
   edges: Float32Array;
+  /** ink bounds [x0, y0, x1, y1] in em, same origin */
+  box: [number, number, number, number];
 }
 
 const cache = new Map<string, Glyph | null>();
@@ -104,7 +106,18 @@ export function getGlyph(ch: string): Glyph | null {
         pts.push((x - PAD_X * MS) / MS, (y - ASC * MS) / MS, -gx / len, -gy / len);
       }
     }
-    g = { ch, mw, mh, alpha, edges: new Float32Array(pts) };
+    let x0 = mw, y0 = mh, x1 = -1, y1 = -1;
+    for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
+      if (alpha[y * mw + x] < 128) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+    const box: Glyph['box'] = x1 < 0
+      ? [0, -0.5, adv, 0]
+      : [(x0 - PAD_X * MS) / MS, (y0 - ASC * MS) / MS, (x1 + 1 - PAD_X * MS) / MS, (y1 + 1 - ASC * MS) / MS];
+    g = { ch, mw, mh, alpha, edges: new Float32Array(pts), box };
   }
   cache.set(ch, g);
   return g;

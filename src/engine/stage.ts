@@ -46,6 +46,7 @@ export class Stage implements World {
   private lastEmptyTap = { t: -10, x: 0, y: 0 };
   private downHit: Letter | null = null;
   private amb0: Ambient = { x: 0, y: 0, r: 0, sx: 0, sy: 0 };
+  private loose = false; // letters are flying home after a free material; hard limits wait
   private caretOn = false;
   private caretT = 0; // time of the last keystroke, so the caret stays solid while typing
   private caretA = 0;
@@ -98,8 +99,14 @@ export class Stage implements World {
       this.p.grab = null; this.timers = [];
       calm(this.letters);
       if (prev.material === 'bloom') this.plants.wither();
+      if (BEHAVIORS[prev.material].spring.free) {
+        this.loose = true;
+        // take the short way round when the springs turn them upright again
+        for (const l of this.letters) l.rot = Math.atan2(Math.sin(l.rot), Math.cos(l.rot));
+      }
       this.material = next.material;
       this.cursor.setMaterial(next.material);
+      BEHAVIORS[next.material].enter?.(this);
     }
     this.applyDials();
     if (next.word !== prev.word) { this.caretT = this.t; if (this.ready) this.relayout(true); }
@@ -110,6 +117,8 @@ export class Stage implements World {
     this.p.grab = null; this.timers = [];
     this.fx.clear();
     this.plants.wither();
+    const mat = BEHAVIORS[this.material];
+    if (mat.reset) { mat.reset(this); return; }
     for (const l of this.letters) {
       l.vx = l.vy = l.vr = l.vsx = l.vsy = l.vsk = 0;
       l.ox *= 0.25; l.oy *= 0.25; l.rot *= 0.25; l.sk *= 0.25;
@@ -284,7 +293,7 @@ export class Stage implements World {
 
     resetInputs(this.letters);
     mat.update(this, dt);
-    integrate(this.letters, mat.spring, dt, this.fs);
+    this.loose = integrate(this.letters, mat.spring, dt, this.fs, this.loose) && !mat.spring.free;
     this.lift += (mat.spring.lift - this.lift) * (1 - Math.exp(-dt * 8));
     this.matrices();
 

@@ -24,7 +24,13 @@ export function resetInputs(letters: Letter[]) {
   }
 }
 
-export function integrate(letters: Letter[], s: SpringSpec, dt: number, fs: number) {
+/**
+ * `loose` lifts the hard limits while letters travel home from far away (after a free material).
+ * Returns true while any letter is still outside those limits.
+ */
+export function integrate(letters: Letter[], s: SpringSpec, dt: number, fs: number, loose = false): boolean {
+  const free = !!s.free;
+  let far = false;
   const steps = Math.max(1, Math.min(6, Math.ceil(dt * 120)));
   const h = dt / steps;
   const lim = s.limit * fs;
@@ -34,26 +40,31 @@ export function integrate(letters: Letter[], s: SpringSpec, dt: number, fs: numb
     const k = s.k * l.kMul;
     const c = s.c * Math.sqrt(l.kMul);
     for (let i = 0; i < steps; i++) {
-      l.vx += (l.fx + k * (l.tx - l.ox) - c * l.vx) * h;
-      l.vy += (l.fy + k * (l.ty - l.oy) - c * l.vy) * h;
-      l.ox += l.vx * h; l.oy += l.vy * h;
-      l.vr += (s.rk * (l.rT - l.rot) - s.rc * l.vr) * h; l.rot += l.vr * h;
+      if (!free) {
+        l.vx += (l.fx + k * (l.tx - l.ox) - c * l.vx) * h;
+        l.vy += (l.fy + k * (l.ty - l.oy) - c * l.vy) * h;
+        l.ox += l.vx * h; l.oy += l.vy * h;
+        l.vr += (s.rk * (l.rT - l.rot) - s.rc * l.vr) * h; l.rot += l.vr * h;
+      }
       l.vsx += (s.sk * (l.sxT - l.sx) - s.sc * l.vsx) * h; l.sx += l.vsx * h;
       l.vsy += (s.sk * (l.syT - l.sy) - s.sc * l.vsy) * h; l.sy += l.vsy * h;
       l.vsk += (s.sk * (l.skT - l.sk) - s.sc * l.vsk) * h; l.sk += l.vsk * h;
     }
     // hard guarantees: nothing leaves the stage, nothing becomes unreadable
     const d = Math.hypot(l.ox, l.oy);
-    if (d > lim) { const q = lim / d; l.ox *= q; l.oy *= q; l.vx *= 0.5; l.vy *= 0.5; }
+    if (free) { /* the material keeps its own bodies in bounds */ }
+    else if (loose) { if (d > lim || Math.abs(l.rot) > 0.5) far = true; }
+    else if (d > lim) { const q = lim / d; l.ox *= q; l.oy *= q; l.vx *= 0.5; l.vy *= 0.5; }
     const v = Math.hypot(l.vx, l.vy);
-    if (v > vmax) { l.vx *= vmax / v; l.vy *= vmax / v; }
+    if (!free && v > vmax) { l.vx *= vmax / v; l.vy *= vmax / v; }
     if (l.sx < 0.6 || l.sx > 1.6) { l.sx = clamp(l.sx, 0.6, 1.6); l.vsx *= 0.3; }
     if (l.sy < 0.6 || l.sy > 1.6) { l.sy = clamp(l.sy, 0.6, 1.6); l.vsy *= 0.3; }
-    if (Math.abs(l.rot) > 0.5) { l.rot = clamp(l.rot, -0.5, 0.5); l.vr *= 0.3; }
+    if (!free && !loose && Math.abs(l.rot) > 0.5) { l.rot = clamp(l.rot, -0.5, 0.5); l.vr *= 0.3; }
     if (Math.abs(l.sk) > 0.5) { l.sk = clamp(l.sk, -0.5, 0.5); l.vsk *= 0.3; }
     l.heat += (l.heatT - l.heat) * (1 - Math.exp(-dt * 9));
     l.alpha += (1 - l.alpha) * (1 - Math.exp(-dt * 9));
   }
+  return far;
 }
 
 /** Kill momentum without snapping — used when the material changes. */

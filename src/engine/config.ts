@@ -42,6 +42,11 @@ export const MATERIALS: MaterialInfo[] = [
     help: 'Move to make a current · Click for a gust · Drag to tow',
     touchHelp: 'Swipe to make a current · Tap for a gust · Drag a letter to tow',
   },
+  {
+    id: 'gravity', label: 'Gravity', note: 'Falls, piles up',
+    help: 'Hover to shove · Click to flip gravity · Drag to throw',
+    touchHelp: 'Swipe to shove · Tap to flip gravity · Drag a letter to throw',
+  },
 ];
 
 export const SUGGESTIONS = ['hello', 'jelly', 'bloom', 'float', 'chaos'];
@@ -60,4 +65,7 @@ export const PRESETS: { word: string; material: MaterialId; palette: string }[] 
   { word: 'breeze', material: 'float', palette: 'cobalt' },
   { word: 'squish', material: 'jelly', palette: 'night' },
   { word: 'orbit', material: 'magnet', palette: 'paper' },
+  { word: 'tumble', material: 'gravity', palette: 'acid' },
+  { word: 'heavy', material: 'gravity', palette: 'ember' },
+  { word: 'oops', material: 'gravity', palette: 'cobalt' },
 ];

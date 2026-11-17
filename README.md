@@ -2,7 +2,7 @@
 
 A playground for words. Type a word, pick a material, and touch the letters.
 
-Four materials, each with its own physics, cursor and sound:
+Five materials, each with its own physics, cursor and sound:
 
 | Material | Hover | Click | Drag |
 | --- | --- | --- | --- |
@@ -10,6 +10,7 @@ Four materials, each with its own physics, cursor and sound:
 | Magnet | letters lean and slide toward the pointer | repulsion pulse | hold for a stronger field that follows you |
 | Bloom | stems and leaves sprout from the glyph outlines | a full flower opens, in stages | sow a trail of buds across the letters |
 | Float | pointer movement becomes a current | radial gust | tow a letter on an elastic thread |
+| Gravity | the pointer is a ball that shoves letters | flips gravity (on a letter: kicks it) | pick a letter up and throw it |
 
 ## Run it
 
@@ -39,7 +40,7 @@ src/
     stage.ts              the single requestAnimationFrame loop, pointer input, the "world"
     layout.ts             word sizing, kerned glyph positions, glyph alpha masks + outline points
     simulation.ts         damped springs per letter (position, rotation, scale, skew), delta time
-    materials/            jelly.ts, magnet.ts, bloom.ts, float.ts — one behaviour each
+    materials/            jelly, magnet, bloom, float, gravity — one behaviour each (gravity runs its own rigid-body step)
     plants.ts             Bloom's vector garden, anchored to glyph silhouettes
     effects.ts            rings, pulses, gusts, bursts
     cursor.ts             the four drawn cursors

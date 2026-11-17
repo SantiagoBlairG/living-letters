@@ -185,6 +185,7 @@ kbd {
   background: var(--fill); border: 1px solid var(--line); color: var(--dim);
   transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.15s var(--ease);
 }
+.materials button:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .materials svg { grid-row: 1 / 3; color: var(--ink); }
 .materials .m-name { color: var(--ink); font-weight: 600; font-size: 14px; line-height: 1.25; }
 .materials .m-note { font-size: 11.5px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

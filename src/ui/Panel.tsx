@@ -19,6 +19,7 @@ function Glyph({ id }: { id: MaterialId }) {
       {id === 'jelly' && (<><ellipse cx="16" cy="17" rx="11" ry="9" /><circle cx="14" cy="16" r="2.8" fill="currentColor" stroke="none" /></>)}
       {id === 'magnet' && (<><path d="M6 13a11 11 0 0 1 14-7.5M26 19a11 11 0 0 1-14 7.5" /><circle cx="16" cy="16" r="3.4" fill="currentColor" stroke="none" /></>)}
       {id === 'bloom' && (<g stroke="none" fill="currentColor"><path d="M16 9c4 3 4 10 0 14c-4-4-4-11 0-14Z" /><path d="M14 22C9 22 6 19 5 15c5 0 8 3 9 7ZM18 22c5 0 8-3 9-7c-5 0-8 3-9 7Z" opacity=".55" /></g>)}
+      {id === 'gravity' && (<><path d="M16 5v13M10.5 13l5.5 5.5 5.5-5.5" strokeLinejoin="round" /><path d="M6 26h20" /></>)}
       {id === 'float' && (<><circle cx="21" cy="11" r="3.4" fill="currentColor" stroke="none" /><path d="M17 15C12 19 8 21 4 26M19 18c-3 3-5 5-7 8" opacity=".7" /></>)}
     </svg>
   );

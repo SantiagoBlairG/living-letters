@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { DEFAULT_CUSTOM, ELEMENTS, MATERIALS, MAX_CHARS, PRESETS, resolvePalette } from './engine/config';
 import { Stage } from './engine/stage';
-import { fileName, savePng } from './engine/exporter';
+import { FORMATS, Recording, fileName, outSize, saveFile, videoType, type FormatId } from './engine/exporter';
 import type { Settings } from './engine/types';
 import { Panel } from './ui/Panel';
 import { QuickEditor } from './ui/QuickEditor';
 import { Icon } from './ui/Icon';
+import { ExportMenu } from './ui/ExportMenu';
+
+const MAX_REC = 20; // seconds
+const VIDEO = videoType();
+
+/** Where a framed stage sits: the largest box of the format's shape in the space the interface leaves free. */
+function frameRect(ratio: number, vw: number, vh: number, panelOpen: boolean) {
+  const narrow = vw < 1100;
+  const top = 76, bottom = narrow ? 120 : 84, left = 24, right = panelOpen && !narrow ? 356 : 24;
+  const aw = Math.max(80, vw - left - right), ah = Math.max(80, vh - top - bottom);
+  const w = Math.min(aw, ah * ratio), h = w / ratio;
+  return { left: Math.round(left + (aw - w) / 2), top: Math.round(top + (ah - h) / 2), width: Math.round(w), height: Math.round(h) };
+}
 
 const INITIAL: Settings = {
   word: 'hello', material: 'jelly', intensity: 0.5, motion: 0.5, palette: 'night',
@@ -19,6 +32,8 @@ const INITIAL: Settings = {
 function devour(app: HTMLDivElement | null, at: { x: number; y: number } | null, timer: { current: number }) {
   if (!app) return;
   window.clearTimeout(timer.current);
+  const cv = app.querySelector('canvas.stage')?.getBoundingClientRect();
+  if (at && cv) at = { x: at.x + cv.left, y: at.y + cv.top };
   if (!at) {
     if (app.dataset.devour !== 'in') return;
     app.dataset.devour = 'out';
@@ -70,6 +85,14 @@ export function App() {
   const [typing, setTyping] = useState(false);
   const [editor, setEditor] = useState<{ x: number; y: number } | null>(null);
   const [exporting, setExporting] = useState<ExportState>('idle');
+  const [format, setFormat] = useState<FormatId>('screen');
+  const [transparent, setTransparent] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [rec, setRec] = useState<{ t0: number; elapsed: number } | null>(null);
+  const recRef = useRef<Recording | null>(null);
+  const [view, setView] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
+  const menuOpenRef = useRef(menuOpen);
+  menuOpenRef.current = menuOpen;
   const coarseRef = useRef(coarse);
   const wheelAcc = useRef(0);
   const appRef = useRef<HTMLDivElement>(null);
@@ -109,6 +132,12 @@ export function App() {
 
   useEffect(() => { stageRef.current?.update(settings); }, [settings]);
   useEffect(() => { stageRef.current?.setCaret(typing); }, [typing]);
+  useEffect(() => { stageRef.current?.setFormat(format); }, [format]);
+  useEffect(() => {
+    const onResize = () => setView({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     const mqC = window.matchMedia('(pointer: coarse)');
@@ -141,25 +170,71 @@ export function App() {
     setSound(!sound);
   };
 
-  const exportPng = useCallback(async () => {
+  const flash = (state: ExportState) => {
+    setExporting(state);
+    window.setTimeout(() => setExporting('idle'), 1800);
+  };
+
+  const saveImage = useCallback(async () => {
     const stage = stageRef.current;
     if (!stage || exporting === 'working') return;
+    setMenuOpen(false);
     setExporting('working');
     try {
-      const blob = await stage.exportPng();
-      const result = await savePng(blob, fileName(settings.word, settings.material));
-      setExporting(result === 'saved' ? 'saved' : 'idle');
+      const blob = await stage.exportPng(outSize(format, stage.W, stage.H, false), transparent);
+      const result = await saveFile(blob, fileName(settings.word, settings.material, 'png', [...(format !== 'screen' ? [format] : []), ...(transparent ? ['transparent'] : [])]));
+      flash(result === 'saved' ? 'saved' : 'idle');
     } catch {
-      setExporting('failed');
+      flash('failed');
     }
-    window.setTimeout(() => setExporting('idle'), 1800);
-  }, [exporting, settings.word, settings.material]);
+  }, [exporting, format, transparent, settings.word, settings.material]);
+
+  const stopVideo = useCallback(async () => {
+    const r = recRef.current;
+    if (!r) return;
+    recRef.current = null;
+    stageRef.current?.stopRecording();
+    setRec(null);
+    setExporting('working');
+    try {
+      const blob = await r.stop();
+      const result = await saveFile(blob, fileName(settings.word, settings.material, r.ext, format !== 'screen' ? [format] : []));
+      flash(result === 'saved' ? 'saved' : 'idle');
+    } catch {
+      flash('failed');
+    }
+  }, [settings.word, settings.material, format]);
+
+  const startVideo = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage || !VIDEO || recRef.current) return;
+    setMenuOpen(false);
+    try {
+      const canvas = stage.startRecording(outSize(format, stage.W, stage.H, true));
+      recRef.current = new Recording(canvas, VIDEO);
+      setRec({ t0: performance.now(), elapsed: 0 });
+    } catch {
+      stage.stopRecording();
+      flash('failed');
+    }
+  }, [format]);
+
+  // the recording clock; it stops by itself at the limit
+  useEffect(() => {
+    if (!rec) return;
+    const id = window.setInterval(() => {
+      const elapsed = (performance.now() - rec.t0) / 1000;
+      if (elapsed >= MAX_REC) void stopVideo();
+      else setRec((r) => (r ? { ...r, elapsed } : r));
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [rec?.t0, stopVideo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const closeEditor = useCallback(() => { setEditor(null); canvasRef.current?.focus(); }, []);
 
   /** Keys that never produce text, shared by the page and the stage's own text field. Returns true when handled. */
   const command = useCallback((key: string) => {
-    if (key === 'Escape') setPanelOpen((o) => !o);
+    if (key === 'Escape') { if (menuOpenRef.current) setMenuOpen(false); else setPanelOpen((o) => !o); }
     else if (key === 'ArrowRight') cycleMaterial(1);
     else if (key === 'ArrowLeft') cycleMaterial(-1);
     else if (key === 'Enter') reset();
@@ -201,16 +276,22 @@ export function App() {
   }, [palette.bg, palette.bg2]);
 
   const word = settings.word.trim();
-  const exportLabel = { idle: 'Export PNG', working: 'Rendering…', saved: 'Saved', failed: 'Export failed' }[exporting];
+  const exportLabel = { idle: 'Export', working: 'Saving…', saved: 'Saved', failed: 'Export failed' }[exporting];
+  const fmt = FORMATS.find((f) => f.id === format)!;
+  const frame = fmt.ratio ? frameRect(fmt.ratio, view.w, view.h, panelOpen) : null;
+  const stageSize = stageRef.current ? outSize(format, stageRef.current.W, stageRef.current.H, false) : null;
+  const sizeLabel = fmt.out ? `${fmt.out[0]} × ${fmt.out[1]}` : stageSize ? `${stageSize.w} × ${stageSize.h}` : '';
+  const clock = rec ? `0:${String(Math.floor(rec.elapsed)).padStart(2, '0')}` : '';
   const element = ELEMENTS.find((e) => e.id === settings.element) ?? ELEMENTS[0];
   const help = settings.material === 'elements' ? (coarse ? element.touchHelp : element.help) : coarse ? material.touchHelp : material.help;
   const gestures = [coarse ? 'Double-tap to edit' : 'Type to rewrite', ...help.split(' · ')];
 
   return (
-    <div ref={appRef} className="app" style={vars} data-panel={panelOpen ? 'open' : 'closed'}>
+    <div ref={appRef} className="app" style={vars} data-panel={panelOpen ? 'open' : 'closed'} data-frame={frame ? format : undefined} data-rec={rec ? '' : undefined}>
       <canvas
         ref={canvasRef}
         className="stage"
+        style={frame ?? undefined}
         tabIndex={0}
         role="img"
         aria-label={word ? `The word “${word}”, set in large letters that behave like ${material.label.toLowerCase()}.` : 'An empty stage. Type a word to begin.'}
@@ -244,8 +325,11 @@ export function App() {
         </button>
       </div>
 
-      {!word && <p className="empty">{coarse ? 'Double-tap to write a word' : 'Type a word to bring it to life'}</p>}
-      <p className="hint" data-show={hint && !!word} aria-hidden={!hint}>
+      {!word && <p className="empty" style={frame ? { left: frame.left, right: 'auto', width: frame.width, top: frame.top + frame.height / 2 } : undefined}>{coarse ? 'Double-tap to write a word' : 'Type a word to bring it to life'}</p>}
+      <p
+        className="hint" data-show={hint && !!word} aria-hidden={!hint}
+        style={frame ? { left: frame.left, right: 'auto', width: frame.width, top: frame.top + frame.height * 0.84 } : undefined}
+      >
         {coarse ? 'Touch the letters to play. Double-tap to change the word.' : 'Just start typing, or play with the letters.'}
       </p>
 
@@ -258,11 +342,29 @@ export function App() {
           <Icon name="reset" />
           Reset
         </button>
-        <button type="button" className="chip solid" onClick={exportPng} disabled={!word || exporting === 'working'}>
-          <Icon name="download" />
-          {exportLabel}
-        </button>
+        {rec ? (
+          <button type="button" className="chip rec" onClick={() => void stopVideo()}>
+            <Icon name="stop" />
+            <span className="num">{clock}</span> Stop
+          </button>
+        ) : (
+          <button
+            type="button" className="chip solid" data-export-toggle aria-expanded={menuOpen} aria-haspopup="dialog"
+            onClick={() => setMenuOpen((o) => !o)} disabled={!word || exporting === 'working'}
+          >
+            <Icon name="download" />
+            {exportLabel}
+          </button>
+        )}
       </div>
+
+      {menuOpen && (
+        <ExportMenu
+          format={format} transparent={transparent} canRecord={!!VIDEO} sizeLabel={sizeLabel}
+          onFormat={setFormat} onTransparent={setTransparent}
+          onImage={() => void saveImage()} onVideo={startVideo} onClose={() => setMenuOpen(false)}
+        />
+      )}
 
       <Panel
         open={panelOpen} settings={settings}

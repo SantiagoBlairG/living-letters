@@ -4,17 +4,19 @@ import { fontOf } from './layout';
 import { BEHAVIORS } from './materials';
 
 /** Draws the scene — background, plants, letters, effects — at any pixel scale. Used for the screen and for export. */
-export function renderScene(ctx: CanvasRenderingContext2D, st: Stage, scale: number) {
+/** With `transparent`, the background is left empty (for images with no background). */
+export function renderScene(ctx: CanvasRenderingContext2D, st: Stage, scale: number, transparent = false) {
   const c = st.colors.now;
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.globalAlpha = 1;
   const fade = Math.abs(c.bg[0] - c.bg2[0]) + Math.abs(c.bg[1] - c.bg2[1]) + Math.abs(c.bg[2] - c.bg2[2]) > 1.5;
-  if (fade) {
+  if (transparent) ctx.clearRect(0, 0, st.W, st.H);
+  else if (fade) {
     const g = ctx.createLinearGradient(0, 0, 0, st.H);
     g.addColorStop(0, css(c.bg)); g.addColorStop(1, css(c.bg2));
     ctx.fillStyle = g;
-  } else ctx.fillStyle = css(c.bg);
-  ctx.fillRect(0, 0, st.W, st.H);
+    ctx.fillRect(0, 0, st.W, st.H);
+  } else { ctx.fillStyle = css(c.bg); ctx.fillRect(0, 0, st.W, st.H); }
 
   const mat = BEHAVIORS[st.material];
   if (mat.back) {

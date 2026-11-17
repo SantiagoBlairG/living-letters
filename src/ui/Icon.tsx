@@ -4,6 +4,9 @@ const PATHS = {
   sliders: <><path d="M2.5 5h5M11.5 5h2M2.5 11h2M8.5 11h5" /><circle cx="9.5" cy="5" r="1.8" /><circle cx="6.5" cy="11" r="1.8" /></>,
   reset: <><path d="M3.2 8a4.8 4.8 0 1 0 1.5-3.5" /><path d="M3 2.8v2.6h2.6" /></>,
   download: <><path d="M8 2.5v7.2M5 7l3 3 3-3M3 13h10" /></>,
+  record: <circle cx="8" cy="8" r="4.5" fill="currentColor" stroke="none" />,
+  stop: <rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" stroke="none" />,
+  image: <><rect x="2.5" y="3" width="11" height="10" rx="2" /><path d="m3.5 11.5 3-3 2.5 2.5 1.5-1.5 2 2" /><circle cx="10.5" cy="6" r="1" fill="currentColor" stroke="none" /></>,
   sparkle: <><path d="M8 2.2l1.3 3.5 3.5 1.3-3.5 1.3L8 11.8 6.7 8.3 3.2 7l3.5-1.3z" fill="currentColor" stroke="none" /><path d="M12.6 11v2.4M11.4 12.2h2.4" /></>,
 };
 

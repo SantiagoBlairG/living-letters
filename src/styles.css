@@ -354,6 +354,43 @@ kbd {
   .panel { top: 64px; max-height: calc(100% - 64px - 68px); }
 }
 
+/* ---------- export ---------- */
+
+/* a framed stage: the canvas takes the format's shape, set off from the page around it */
+.app[data-frame] { background: color-mix(in srgb, var(--bg) 62%, #000); transition: background-color 0.45s ease; }
+.app[data-frame] .stage {
+  inset: auto; border-radius: 16px;
+  box-shadow: 0 0 0 1px var(--line-strong), 0 30px 80px -30px rgba(0, 0, 0, 0.7);
+}
+.app[data-rec] .stage { box-shadow: 0 0 0 2px #ff4b3a, 0 30px 80px -30px rgba(0, 0, 0, 0.7); }
+
+.export {
+  position: absolute; z-index: 7; right: var(--edge); bottom: calc(var(--edge) + 48px); width: 316px;
+  padding: 14px 16px 14px; border-radius: 20px; display: grid; gap: 12px;
+  animation: quick-in 0.22s var(--ease);
+}
+.export .row { margin-bottom: -4px; }
+.formats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.formats button {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px 7px; border-radius: 12px;
+  background: var(--fill); border: 1px solid var(--line); font-size: 12px; font-weight: 600;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+.formats button:hover { border-color: var(--line-strong); }
+.formats button[aria-checked='true'] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.export .switch { justify-self: start; }
+.export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.export-actions .btn:disabled { opacity: 0.45; cursor: default; }
+.export .small { margin: 0; }
+
+.chip.rec { background: #ff4b3a; color: #fff; border: 1px solid #ff4b3a; min-width: 124px; justify-content: center; }
+.chip.rec .icon { animation: rec-blink 1s steps(2, start) infinite; }
+@keyframes rec-blink { to { opacity: 0.35; } }
+
+@media (max-width: 1099px) {
+  .export { right: auto; left: var(--edge); bottom: calc(62px + 46px); width: min(316px, calc(100% - 28px)); }
+}
+
 /* ---------- swallowed by a black hole ---------- */
 
 /*

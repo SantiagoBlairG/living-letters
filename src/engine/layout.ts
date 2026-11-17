@@ -17,14 +17,15 @@ export const fontOf = (px: number) => `${face.weight} ${px}px ${face.family}`;
 export interface Slot { ch: string; x: number; adv: number } // px, relative to the word's left edge
 export interface WordLayout { fs: number; baseline: number; left: number; width: number; slots: Slot[] }
 
-export function layoutWord(word: string, W: number, H: number, mobile: boolean): WordLayout {
+/** `framed`: the stage is a canvas format (square, story…) with nothing laid over it, so the word is simply centred. */
+export function layoutWord(word: string, W: number, H: number, mobile: boolean, framed = false): WordLayout {
   const ctx = measurer();
   ctx.font = fontOf(REF);
   const chars = Array.from(word);
   // Desktop: as wide as possible (50–66% of the stage) while staying clear of the 300px panel.
-  const frac = mobile ? (W < 560 ? 0.84 : 0.72) : Math.min(0.66, Math.max(0.5, (W - 696) / W));
-  const hFrac = mobile ? 0.3 : 0.47;
-  const centerY = mobile ? H * 0.36 : H * 0.5;
+  const frac = framed ? 0.82 : mobile ? (W < 560 ? 0.84 : 0.72) : Math.min(0.66, Math.max(0.5, (W - 696) / W));
+  const hFrac = framed ? 0.42 : mobile ? 0.3 : 0.47;
+  const centerY = framed ? H * 0.5 : mobile ? H * 0.36 : H * 0.5;
 
   // Pen positions come from prefix widths, so pair kerning is preserved
   // even though every glyph is drawn on its own.

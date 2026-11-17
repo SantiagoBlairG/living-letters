@@ -36,6 +36,14 @@ Node 20+ is enough. There is no backend.
 - **Colour**: five presets, or **Custom** with your own background, letters and accent, and an optional gradient.
 - **Fine-tune**: besides Intensity and Motion, each material has its own dial (Softness, Air, Reach, Density, Lightness, Ripple size, Weight, Shards, Grain size, Flow).
 
+## Export
+
+**Export** (bottom right) opens a small menu:
+
+- **Canvas**: Screen, Square (1080 × 1080), Story (1080 × 1920) or Wide (1920 × 1080). A format other than Screen reshapes the stage itself into that frame, so what you play is what you save.
+- **Save image**: a PNG of this moment, optionally with a **transparent background**.
+- **Record video**: records what you do next, until you press Stop (up to 20 s), at the format's size — the letters only, without cursor or interface. MP4 where the browser can record it (Chrome, Safari), WebM otherwise.
+
 ## Typing and shortcuts
 
 Just type: any key writes straight onto the stage, with a caret after the last letter, whether the panel is open or not.

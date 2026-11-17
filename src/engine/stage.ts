@@ -10,6 +10,7 @@ import { CursorView } from './cursor';
 import { BEHAVIORS } from './materials';
 import { renderScene } from './renderer';
 import { exportBlob } from './exporter';
+import type { FormatId } from './exporter';
 
 export interface StageEvents {
   /** two quick taps on empty stage */
@@ -52,6 +53,9 @@ export class Stage implements World {
   private downHit: Letter | null = null;
   private amb0: Ambient = { x: 0, y: 0, r: 0, sx: 0, sy: 0 };
   private fontId = '';
+  private framed = false;
+  /** while recording: a canvas the clean scene is also drawn to every frame, at the video's size */
+  private rec: { ctx: CanvasRenderingContext2D; scale: number } | null = null;
   private loose = false; // letters are flying home after a free material; hard limits wait
   private caretOn = false;
   private caretT = 0; // time of the last keystroke, so the caret stays solid while typing
@@ -140,7 +144,26 @@ export class Stage implements World {
     }
   }
 
-  exportPng() { return exportBlob(this); }
+  exportPng(size: { w: number; h: number }, transparent = false) { return exportBlob(this, size, transparent); }
+
+  /** A format other than the full screen centres the word in its frame instead of avoiding the panel. */
+  setFormat(format: FormatId) {
+    const framed = format !== 'screen';
+    if (framed === this.framed) return;
+    this.framed = framed;
+    if (this.ready) this.relayout(true);
+  }
+
+  /** Starts drawing the scene — no interface, no cursor, no caret — to a canvas of the given size, every frame. */
+  startRecording(size: { w: number; h: number }) {
+    const c = document.createElement('canvas');
+    c.width = size.w; c.height = size.h;
+    this.rec = { ctx: c.getContext('2d')!, scale: Math.max(size.w / this.W, size.h / this.H) };
+    renderScene(this.rec.ctx, this, this.rec.scale);
+    return c;
+  }
+
+  stopRecording() { this.rec = null; }
 
   /** Shows a text caret after the word while the stage is taking keystrokes. Never part of an export. */
   setCaret(on: boolean) { this.caretOn = on; this.caretT = this.t; }
@@ -262,7 +285,7 @@ export class Stage implements World {
 
   /** Rebuilds letter slots. Letters that survive keep their state; with `soft` they glide to their new place. */
   private relayout(soft: boolean, keep = false) {
-    const L = layoutWord(this.settings.word, this.W, this.H, this.mobile);
+    const L = layoutWord(this.settings.word, this.W, this.H, this.mobile, this.framed);
     const old = this.letters;
     const lift = this.lift;
     const oldPivotY = this.baseline - lift * this.fs, newPivotY = L.baseline - lift * L.fs;
@@ -361,6 +384,7 @@ export class Stage implements World {
 
   private draw() {
     renderScene(this.ctx, this, this.dpr);
+    if (this.rec) renderScene(this.rec.ctx, this, this.rec.scale);
     this.drawCaret();
     this.cursor.draw(this.ctx, this.colors.now);
   }

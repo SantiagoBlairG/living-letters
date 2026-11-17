@@ -55,9 +55,9 @@ export function layoutWord(word: string, W: number, H: number, mobile: boolean):
 
 /* ---------- glyph masks: hit testing + plant anchors ---------- */
 
-const MS = 96; // mask pixels per em
-const PAD_X = 0.35;
-const ASC = 1.1;
+export const MS = 96; // mask pixels per em
+export const PAD_X = 0.35;
+export const ASC = 1.1;
 const DESC = 0.45;
 
 export interface Glyph {

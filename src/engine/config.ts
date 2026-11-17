@@ -62,6 +62,16 @@ export const MATERIALS: MaterialInfo[] = [
     help: 'Hover to crack · Click to shatter · Hold to charge a blast',
     touchHelp: 'Tap a letter to shatter · Hold to charge a blast',
   },
+  {
+    id: 'sand', label: 'Sand', note: 'Blows away in grains',
+    help: 'Hover to blow · Click for a dust cloud · Drag to sweep a furrow',
+    touchHelp: 'Swipe to blow · Tap for a dust cloud · Drag to sweep',
+  },
+  {
+    id: 'melt', label: 'Melt', note: 'Drips and puddles',
+    help: 'Hover to melt · Click to splash · Drag to pull the drips',
+    touchHelp: 'Touch to melt · Tap to splash · Drag to pull the drips',
+  },
 ];
 
 export const SUGGESTIONS = ['hello', 'jelly', 'bloom', 'float', 'chaos'];
@@ -90,4 +100,10 @@ export const PRESETS: { word: string; material: MaterialId; palette: string }[] 
   { word: 'boom', material: 'explode', palette: 'ember' },
   { word: 'glass', material: 'explode', palette: 'paper' },
   { word: 'crash', material: 'explode', palette: 'night' },
+  { word: 'dune', material: 'sand', palette: 'ember' },
+  { word: 'desert', material: 'sand', palette: 'acid' },
+  { word: 'arena', material: 'sand', palette: 'cobalt' },
+  { word: 'melt', material: 'melt', palette: 'ember' },
+  { word: 'honey', material: 'melt', palette: 'paper' },
+  { word: 'drip', material: 'melt', palette: 'night' },
 ];

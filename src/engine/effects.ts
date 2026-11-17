@@ -3,7 +3,7 @@ import { css, type RGB } from './color';
 
 /** Short-lived graphic marks: rings, pulses, gusts and bursts. */
 
-interface Fx { kind: 'ring' | 'pulse' | 'gust' | 'burst' | 'confetti'; x: number; y: number; age: number; dur: number; r: number; color: ColorKey; seed: number }
+interface Fx { kind: 'ring' | 'pulse' | 'gust' | 'burst' | 'confetti' | 'splash'; x: number; y: number; age: number; dur: number; r: number; color: ColorKey; seed: number }
 
 const out3 = (p: number) => 1 - Math.pow(1 - p, 3);
 /** Stable pseudo-random numbers, so a confetti burst needs no per-piece state. */
@@ -20,6 +20,7 @@ export class Effects {
   pulse(x: number, y: number, color: ColorKey, r: number) { this.add('pulse', x, y, r, 0.75, color); }
   gust(x: number, y: number, color: ColorKey, r: number) { this.add('gust', x, y, r, 0.9, color); }
   burst(x: number, y: number, color: ColorKey, r = 30) { this.add('burst', x, y, r, 0.45, color); }
+  splash(x: number, y: number, r: number, color: ColorKey) { this.add('splash', x, y, r, 1, color); }
   confetti(x: number, y: number, r: number) { this.add('confetti', x, y, r, 1.3, 'flower'); }
 
   update(dt: number) {
@@ -54,6 +55,15 @@ export class Effects {
           const a0 = f.seed + i * 2.2 + q * 0.9;
           ctx.strokeStyle = css(col, Math.sin(q * Math.PI) * 0.8);
           ctx.beginPath(); ctx.arc(f.x, f.y, 14 + f.r * (0.35 + i * 0.22) * out3(q), a0, a0 + 0.9 + i * 0.25); ctx.stroke();
+        }
+      } else if (f.kind === 'splash') {
+        // drops thrown mostly upward, falling back under their own weight
+        const t = f.age, k = 2, drift = (1 - Math.exp(-k * t)) / k;
+        ctx.fillStyle = css(col, 1 - p * p);
+        for (let i = 0; i < 16; i++) {
+          const a = -Math.PI / 2 + (rnd(f.seed, i) - 0.5) * Math.PI * 1.6, sp = f.r * (1.5 + rnd(f.seed, i + 40) * 3);
+          const x = f.x + Math.cos(a) * sp * drift, y = f.y + Math.sin(a) * sp * drift + 0.5 * f.r * 7 * t * t;
+          ctx.beginPath(); ctx.arc(x, y, f.r * 0.035 * (0.6 + rnd(f.seed, i + 80)), 0, Math.PI * 2); ctx.fill();
         }
       } else if (f.kind === 'confetti') {
         const t = f.age, k = 2.6, drift = (1 - Math.exp(-k * t)) / k;

@@ -4,7 +4,7 @@ import type { Plants } from './plants';
 import type { Sound } from './audio';
 import type { RGB } from './color';
 
-export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity' | 'balloon' | 'wave' | 'explode';
+export type MaterialId = 'jelly' | 'magnet' | 'bloom' | 'float' | 'gravity' | 'balloon' | 'wave' | 'explode' | 'sand' | 'melt';
 export type ColorKey = 'bg' | 'ink' | 'stem' | 'flower' | 'spark';
 
 export interface Palette {

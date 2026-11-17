@@ -21,6 +21,8 @@ function Glyph({ id }: { id: MaterialId }) {
       {id === 'bloom' && (<g stroke="none" fill="currentColor"><path d="M16 9c4 3 4 10 0 14c-4-4-4-11 0-14Z" /><path d="M14 22C9 22 6 19 5 15c5 0 8 3 9 7ZM18 22c5 0 8-3 9-7c-5 0-8 3-9 7Z" opacity=".55" /></g>)}
       {id === 'balloon' && (<><ellipse cx="16" cy="12" rx="7.5" ry="8.5" fill="currentColor" stroke="none" /><path d="M16 21c-2 2 2 3 0 5s1 2 0 4" /></>)}
       {id === 'wave' && (<><path d="M3 13c3.2-3 6.3-3 9.5 0s6.3 3 9.5 0 4.8-2.5 7-1" /><path d="M3 21c3.2-3 6.3-3 9.5 0s6.3 3 9.5 0 4.8-2.5 7-1" opacity=".55" /></>)}
+      {id === 'sand' && (<g fill="currentColor" stroke="none"><rect x="14.5" y="9" width="3" height="3" /><rect x="10" y="14" width="3" height="3" /><rect x="19" y="14" width="3" height="3" /><rect x="6" y="20" width="3" height="3" /><rect x="14.5" y="19" width="3" height="3" /><rect x="23" y="20" width="3" height="3" /><rect x="3" y="25" width="26" height="2.5" rx="1.2" opacity=".55" /></g>)}
+      {id === 'melt' && (<path d="M6 6h20v7c0 2-1.5 2-1.5 4.5s-3.2 2.5-3.2 0V15c0-2-3-2-3 0v8c0 3.2-3.6 3.2-3.6 0v-5.5c0-2-3-2-3 0v.5c0 2.2-3.7 2.2-3.7 0z" fill="currentColor" stroke="none" />)}
       {id === 'explode' && (<><path d="M16 3v6M16 23v6M3 16h6M23 16h6M7 7l4 4M25 25l-4-4M25 7l-4 4M7 25l4-4" /><circle cx="16" cy="16" r="2.6" fill="currentColor" stroke="none" /></>)}
       {id === 'gravity' && (<><path d="M16 5v13M10.5 13l5.5 5.5 5.5-5.5" strokeLinejoin="round" /><path d="M6 26h20" /></>)}
       {id === 'float' && (<><circle cx="21" cy="11" r="3.4" fill="currentColor" stroke="none" /><path d="M17 15C12 19 8 21 4 26M19 18c-3 3-5 5-7 8" opacity=".7" /></>)}

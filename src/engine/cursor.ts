@@ -119,6 +119,23 @@ export class CursorView {
       ctx.arc(0, 2 * k, 6 * k, 0, Math.PI);
       ctx.bezierCurveTo(-6 * k, -1 * k, -3 * k, -5 * k, 0, -10 * k);
       ctx.fill();
+    } else if (mat === 'sand') {
+      // a few grains that spread apart as the hand speeds up
+      const spread = 3.5 + Math.min(speed * 0.006, 7) + press * 3;
+      ctx.fillStyle = css(colors.spark);
+      for (let i = 0; i < 5; i++) {
+        const a = this.spin * 0.6 + (i * Math.PI * 2) / 5;
+        ctx.fillRect(Math.cos(a) * spread - 1.6, Math.sin(a) * spread - 1.6, 3.2, 3.2);
+      }
+      ctx.fillStyle = css(colors.ink);
+      ctx.fillRect(-1.8, -1.8, 3.6, 3.6);
+    } else if (mat === 'melt') {
+      // a blob with a drop hanging off it, longer while pressing
+      const drop = 8 + press * 6;
+      ctx.fillStyle = css(colors.flower);
+      ctx.beginPath(); ctx.arc(0, 0, 6.5, 0, 6.2832); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-2, 4); ctx.quadraticCurveTo(0, drop * 0.7, -1.2, drop); ctx.lineTo(1.2, drop); ctx.quadraticCurveTo(0, drop * 0.7, 2, 4); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, drop + 1.5, 2.6, 0, 6.2832); ctx.fill();
     } else if (mat === 'explode') {
       // a spark: eight rays that spin faster while you charge
       const r = 9 + press * 4;

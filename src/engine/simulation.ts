@@ -67,6 +67,13 @@ export function integrate(letters: Letter[], s: SpringSpec, dt: number, fs: numb
   return far;
 }
 
+/** Stage point → a letter's local px (the space its glyph is drawn in). */
+export function toLocal(l: Letter, x: number, y: number): [number, number] {
+  const [a, b, c, d, e, f] = l.m;
+  const det = a * d - b * c || 1;
+  return [(d * (x - e) - c * (y - f)) / det, (-b * (x - e) + a * (y - f)) / det];
+}
+
 /** Kill momentum without snapping — used when the material changes. */
 export function calm(letters: Letter[]) {
   for (const l of letters) {

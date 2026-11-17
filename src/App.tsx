@@ -8,6 +8,7 @@ import { QuickEditor } from './ui/QuickEditor';
 import { Icon } from './ui/Icon';
 import { ExportMenu } from './ui/ExportMenu';
 import { QuickControls } from './ui/QuickControls';
+import { ColorPop } from './ui/ColorPop';
 import { Glyph } from './ui/Panel';
 
 const MAX_REC = 20; // seconds
@@ -90,7 +91,10 @@ export function App() {
   const [transparent, setTransparent] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   const quickOpenRef = useRef(quickOpen);
+  const colorOpenRef = useRef(colorOpen);
+  colorOpenRef.current = colorOpen;
   quickOpenRef.current = quickOpen;
   const [rec, setRec] = useState<{ t0: number; elapsed: number } | null>(null);
   const recRef = useRef<Recording | null>(null);
@@ -153,7 +157,6 @@ export function App() {
     return () => mqC.removeEventListener('change', onC);
   }, []);
 
-  const reset = useCallback(() => stageRef.current?.reset(), []);
 
   const surprise = useCallback(() => {
     setSettings((s) => {
@@ -245,18 +248,18 @@ export function App() {
     if (key === 'Escape') {
       if (menuOpenRef.current) setMenuOpen(false);
       else if (quickOpenRef.current) setQuickOpen(false);
+      else if (colorOpenRef.current) setColorOpen(false);
       else setPanelOpen((o) => !o);
     }
     else if (key === 'ArrowRight') cycleMaterial(1);
     else if (key === 'ArrowLeft') cycleMaterial(-1);
-    else if (key === 'Enter') reset();
     else if (key === 'ArrowUp' || key === 'ArrowDown') {
       const dir = key === 'ArrowDown' ? 1 : -1;
       setSettings((s) => (s.material === 'elements' ? { ...s, element: nextElement(s.element, dir) } : s));
     }
     else return false;
     return true;
-  }, [cycleMaterial, reset]);
+  }, [cycleMaterial]);
 
   // Typing anywhere on the page writes on the stage. Other text fields keep their own keys.
   useEffect(() => {
@@ -332,7 +335,7 @@ export function App() {
           onClick={() => setPanelOpen((o) => !o)}
         >
           <Icon name="sliders" />
-          {panelOpen ? 'Hide controls' : 'Controls'}
+          {panelOpen ? 'Hide controls' : 'All controls'}
         </button>
       </div>
 
@@ -347,7 +350,7 @@ export function App() {
       <div className="corner tc" data-devour>
         <button
           type="button" className="mat-badge glass" data-quick-toggle aria-expanded={quickOpen} aria-haspopup="dialog"
-          onClick={() => setQuickOpen((o) => !o)}
+          onClick={() => { setColorOpen(false); setQuickOpen((o) => !o); }}
         >
           <Glyph id={settings.material} />
           <span>{material.label}{settings.material === 'elements' && <span className="dim"> · {element.label}</span>}</span>
@@ -356,20 +359,23 @@ export function App() {
         <ul className="dock glass" aria-live="polite" aria-label="How to play">
           {gestures.map((g) => <li key={g}>{g}</li>)}
         </ul>
+        <button
+          type="button" className="color-badge glass" data-color-toggle aria-expanded={colorOpen} aria-haspopup="dialog"
+          aria-label={`Colour: ${settings.palette === 'custom' ? 'Custom' : palette.name}`} title="Colour"
+          onClick={() => { setQuickOpen(false); setColorOpen((o) => !o); }}
+        >
+          <span className="swatch" style={{ background: palette.bg2 && palette.bg2 !== palette.bg ? `linear-gradient(135deg, ${palette.bg}, ${palette.bg2})` : palette.bg }}>
+            <i style={{ background: palette.ink }} /><i style={{ background: palette.flower }} /><i style={{ background: palette.spark }} />
+          </span>
+        </button>
       </div>
       {quickOpen && <QuickControls settings={settings} onChange={patch} onClose={() => setQuickOpen(false)} />}
+      {colorOpen && <ColorPop settings={settings} onChange={patch} onClose={() => setColorOpen(false)} />}
 
       <div className="corner bc" data-devour>
         <button type="button" className="chip glass" onClick={surprise}>
           <Icon name="sparkle" />
           Surprise me
-        </button>
-      </div>
-
-      <div className="corner br" data-devour>
-        <button type="button" className="chip glass" onClick={reset}>
-          <Icon name="reset" />
-          Reset
         </button>
         {rec ? (
           <button type="button" className="chip rec" onClick={() => void stopVideo()}>
@@ -398,7 +404,7 @@ export function App() {
       <Panel
         open={panelOpen} settings={settings}
         onChange={patch} onToggle={() => setPanelOpen((o) => !o)}
-        onReset={reset} onSurprise={surprise}
+        onSurprise={surprise}
       />
 
       {editor && (

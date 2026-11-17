@@ -8,7 +8,6 @@ interface Props {
   settings: Settings;
   onChange(p: Partial<Settings>): void;
   onToggle(): void;
-  onReset(): void;
   onSurprise(): void;
 }
 
@@ -32,13 +31,11 @@ export function Glyph({ id }: { id: MaterialId }) {
   );
 }
 
-export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise }: Props) {
+export function Panel({ open, settings, onChange, onToggle, onSurprise }: Props) {
   const count = Array.from(settings.word).length;
   const current = MATERIALS.find((m) => m.id === settings.material)!;
   const font = FONTS.find((f) => f.id === settings.font) ?? FONTS[0];
   const tune = TUNES[settings.material];
-  const custom = settings.palette === 'custom';
-  const setCustom = (c: Partial<CustomColors>) => onChange({ custom: { ...settings.custom, ...c } });
   return (
     <aside id="panel" className="panel glass" data-open={open} aria-label="Controls" data-devour>
       <button type="button" className="handle" onClick={onToggle} aria-expanded={open}>
@@ -116,45 +113,8 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
         </section>
 
         <section>
-          <div className="row"><span id="col-label">Color</span><span className="dim">{custom ? 'Custom' : PALETTES.find((p) => p.id === settings.palette)?.name}</span></div>
-          <div role="radiogroup" aria-labelledby="col-label">
-            {(['dark', 'bright', 'gradient'] as const).map((g) => (
-              <div key={g} className="palette-row">
-                <span className="palette-label">{{ dark: 'Dark', bright: 'Bright', gradient: 'Gradient' }[g]}</span>
-                <div className="palettes">
-                  {PALETTES.filter((p) => p.group === g).map((p) => (
-                    <button
-                      key={p.id} type="button" role="radio" aria-checked={settings.palette === p.id} aria-label={p.name} title={p.name}
-                      style={{ background: p.bg2 ? `linear-gradient(160deg, ${p.bg}, ${p.bg2})` : p.bg, color: p.ink }}
-                      onClick={() => onChange({ palette: p.id })}
-                    >
-                      <span className="p-a" aria-hidden="true">a</span>
-                      <i style={{ background: p.stem }} /><i style={{ background: p.flower }} /><i style={{ background: p.spark }} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-            <button
-              type="button" role="radio" aria-checked={custom} className="custom-btn" onClick={() => onChange({ palette: 'custom' })}
-            >
-              <span className="swatch-dot" aria-hidden="true" />Custom colours
-            </button>
-          </div>
-          {custom && (
-            <div className="custom">
-              <ColorField label="Background" value={settings.custom.bg} onChange={(v) => setCustom({ bg: v })} />
-              <ColorField label="Letters" value={settings.custom.ink} onChange={(v) => setCustom({ ink: v })} />
-              <ColorField label="Accent" value={settings.custom.accent} onChange={(v) => setCustom({ accent: v })} />
-              <label className="switch">
-                <input type="checkbox" checked={settings.custom.gradient} onChange={(e) => setCustom({ gradient: e.target.checked })} />
-                <span>Gradient</span>
-              </label>
-              {settings.custom.gradient && (
-                <ColorField label="Fades to" value={settings.custom.bg2} onChange={(v) => setCustom({ bg2: v })} />
-              )}
-            </div>
-          )}
+          <div className="row"><span id="col-label">Color</span><span className="dim">{settings.palette === 'custom' ? 'Custom' : PALETTES.find((p) => p.id === settings.palette)?.name}</span></div>
+          <ColorChoices settings={settings} onChange={onChange} />
           <label className="switch backdrop-switch">
             <input type="checkbox" checked={settings.backdrop} onChange={(e) => onChange({ backdrop: e.target.checked })} />
             <span>Background effect <span className="dim">· follows the material</span></span>
@@ -162,7 +122,6 @@ export function Panel({ open, settings, onChange, onToggle, onReset, onSurprise 
         </section>
 
         <section className="actions">
-          <button type="button" className="btn" onClick={onReset}>Reset <kbd className="only-wide">Enter</kbd></button>
           <button type="button" className="btn primary" onClick={onSurprise}><Icon name="sparkle" />Surprise me</button>
         </section>
       </div>
@@ -204,5 +163,51 @@ export function ElementIcon({ id }: { id: ElementId }) {
       {id === 'earth' && <path stroke="none" d="M2 20 9 8l4 6 3-4 6 10Z" />}
       {id === 'water' && <path stroke="none" d="M12 3c3 4.5 6 8 6 11.5a6 6 0 0 1-12 0C6 11 9 7.5 12 3Z" />}
     </svg>
+  );
+}
+
+/** The palette rows and the custom colours: shared by the panel and the quick colour picker on the stage. */
+export function ColorChoices({ settings, onChange }: { settings: Settings; onChange(p: Partial<Settings>): void }) {
+  const custom = settings.palette === 'custom';
+  const setCustom = (c: Partial<CustomColors>) => onChange({ custom: { ...settings.custom, ...c } });
+  return (
+    <>
+      <div role="radiogroup" aria-label="Colour">
+        {(['dark', 'bright', 'gradient'] as const).map((g) => (
+          <div key={g} className="palette-row">
+            <span className="palette-label">{{ dark: 'Dark', bright: 'Bright', gradient: 'Gradient' }[g]}</span>
+            <div className="palettes">
+              {PALETTES.filter((p) => p.group === g).map((p) => (
+                <button
+                  key={p.id} type="button" role="radio" aria-checked={settings.palette === p.id} aria-label={p.name} title={p.name}
+                  style={{ background: p.bg2 ? `linear-gradient(160deg, ${p.bg}, ${p.bg2})` : p.bg, color: p.ink }}
+                  onClick={() => onChange({ palette: p.id })}
+                >
+                  <span className="p-a" aria-hidden="true">a</span>
+                  <i style={{ background: p.stem }} /><i style={{ background: p.flower }} /><i style={{ background: p.spark }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        <button type="button" role="radio" aria-checked={custom} className="custom-btn" onClick={() => onChange({ palette: 'custom' })}>
+          <span className="swatch-dot" aria-hidden="true" />Custom colours
+        </button>
+      </div>
+      {custom && (
+        <div className="custom">
+          <ColorField label="Background" value={settings.custom.bg} onChange={(v) => setCustom({ bg: v })} />
+          <ColorField label="Letters" value={settings.custom.ink} onChange={(v) => setCustom({ ink: v })} />
+          <ColorField label="Accent" value={settings.custom.accent} onChange={(v) => setCustom({ accent: v })} />
+          <label className="switch">
+            <input type="checkbox" checked={settings.custom.gradient} onChange={(e) => setCustom({ gradient: e.target.checked })} />
+            <span>Gradient</span>
+          </label>
+          {settings.custom.gradient && (
+            <ColorField label="Fades to" value={settings.custom.bg2} onChange={(v) => setCustom({ bg2: v })} />
+          )}
+        </div>
+      )}
+    </>
   );
 }

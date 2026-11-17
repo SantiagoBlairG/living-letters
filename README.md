@@ -50,7 +50,7 @@ Node 20+ is enough. There is no backend.
 Just type: any key writes straight onto the stage, with a caret after the last letter, whether the panel is open or not.
 On touch screens, double-tap empty stage to edit the word.
 
-`Esc` hide/show the controls · `←` `→` switch material · `↑` `↓` or the mouse wheel switch element (Elements) · `Enter` reset the scene.
+`Esc` hide/show the controls · `←` `→` switch material · `↑` `↓` or the mouse wheel switch element (Elements).
 Text fields in the panel keep their own keys.
 
 ## How it is put together

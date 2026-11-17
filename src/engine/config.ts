@@ -64,13 +64,13 @@ export const MATERIALS: MaterialInfo[] = [
   },
   {
     id: 'sand', label: 'Sand', note: 'Blows away in grains',
-    help: 'Hover to blow · Click for a dust cloud · Drag to sweep a furrow',
+    help: 'Hover to erode · Click for a dust cloud · Drag to cut a furrow',
     touchHelp: 'Swipe to blow · Tap for a dust cloud · Drag to sweep',
   },
   {
     id: 'melt', label: 'Melt', note: 'Drips and puddles',
-    help: 'Hover to melt · Click to splash · Drag to pull the drips',
-    touchHelp: 'Touch to melt · Tap to splash · Drag to pull the drips',
+    help: 'Hover to melt · Click to splash · Drag a letter to stretch it like caramel',
+    touchHelp: 'Touch to melt · Tap to splash · Drag a letter to stretch it',
   },
 ];
 

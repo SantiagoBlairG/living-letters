@@ -82,7 +82,6 @@ export function App() {
   const [panelOpen, setPanelOpen] = useState(() => !window.matchMedia('(max-width: 1099px)').matches);
   const [sound, setSound] = useState(false);
   const [hint, setHint] = useState(true);
-  const [typing, setTyping] = useState(false);
   const [editor, setEditor] = useState<{ x: number; y: number } | null>(null);
   const [exporting, setExporting] = useState<ExportState>('idle');
   const [format, setFormat] = useState<FormatId>('screen');
@@ -131,8 +130,11 @@ export function App() {
   }, [focusStageText]);
 
   useEffect(() => { stageRef.current?.update(settings); }, [settings]);
-  useEffect(() => { stageRef.current?.setCaret(typing); }, [typing]);
+  useEffect(() => { stageRef.current?.setCaret(true); }, []);
   useEffect(() => { stageRef.current?.setFormat(format); }, [format]);
+  // with the panel open on a wide screen, the word is centred in the space to its left
+  const wide = view.w >= 1100;
+  useEffect(() => { stageRef.current?.setInset(panelOpen && wide ? 340 : 0); }, [panelOpen, wide]);
   useEffect(() => {
     const onResize = () => setView({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener('resize', onResize);
@@ -303,7 +305,6 @@ export function App() {
         maxLength={MAX_CHARS * 2} autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
         onChange={(e) => patch({ word: cleanWord(e.target.value) })}
         onKeyDown={onGhostKey}
-        onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
       />
 
       <header className="corner tl" data-devour>
@@ -333,9 +334,16 @@ export function App() {
         {coarse ? 'Touch the letters to play. Double-tap to change the word.' : 'Just start typing, or play with the letters.'}
       </p>
 
-      <ul data-devour className="corner bl dock glass" aria-live="polite" aria-label="How to play">
+      <ul data-devour className="corner tc dock glass" aria-live="polite" aria-label="How to play">
         {gestures.map((g) => <li key={g}>{g}</li>)}
       </ul>
+
+      <div className="corner bc" data-devour>
+        <button type="button" className="chip glass" onClick={surprise}>
+          <Icon name="sparkle" />
+          Surprise me
+        </button>
+      </div>
 
       <div className="corner br" data-devour>
         <button type="button" className="chip glass" onClick={reset}>

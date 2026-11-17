@@ -54,6 +54,7 @@ export class Stage implements World {
   private amb0: Ambient = { x: 0, y: 0, r: 0, sx: 0, sy: 0 };
   private fontId = '';
   private framed = false;
+  private insetR = 0; // px on the right covered by the open panel
   /** while recording: a canvas the clean scene is also drawn to every frame, at the video's size */
   private rec: { ctx: CanvasRenderingContext2D; scale: number } | null = null;
   private loose = false; // letters are flying home after a free material; hard limits wait
@@ -145,6 +146,13 @@ export class Stage implements World {
   }
 
   exportPng(size: { w: number; h: number }, transparent = false) { return exportBlob(this, size, transparent); }
+
+  /** Space on the right the open panel covers; the word glides over to stay centred in what is left. */
+  setInset(px: number) {
+    if (px === this.insetR) return;
+    this.insetR = px;
+    if (this.ready) this.relayout(true);
+  }
 
   /** A format other than the full screen centres the word in its frame instead of avoiding the panel. */
   setFormat(format: FormatId) {
@@ -285,7 +293,7 @@ export class Stage implements World {
 
   /** Rebuilds letter slots. Letters that survive keep their state; with `soft` they glide to their new place. */
   private relayout(soft: boolean, keep = false) {
-    const L = layoutWord(this.settings.word, this.W, this.H, this.mobile, this.framed);
+    const L = layoutWord(this.settings.word, this.W, this.H, this.mobile, this.framed, this.framed ? 0 : this.insetR);
     const old = this.letters;
     const lift = this.lift;
     const oldPivotY = this.baseline - lift * this.fs, newPivotY = L.baseline - lift * L.fs;
@@ -396,7 +404,7 @@ export class Stage implements World {
     const blink = since < 0.6 ? 1 : 0.5 + 0.5 * Math.cos((since - 0.6) * Math.PI * 1.7);
     const ctx = this.ctx, fs = this.fs;
     const last = this.letters[this.letters.length - 1];
-    const x = last ? last.bx + last.adv / 2 + last.ox + fs * 0.05 : this.W / 2;
+    const x = last ? last.bx + last.adv / 2 + last.ox + fs * 0.05 : (this.W - (this.framed ? 0 : this.insetR)) / 2;
     const y = this.baseline + (last ? last.oy : 0);
     const w = Math.max(2, fs * 0.022);
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);

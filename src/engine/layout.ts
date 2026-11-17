@@ -18,12 +18,14 @@ export interface Slot { ch: string; x: number; adv: number } // px, relative to 
 export interface WordLayout { fs: number; baseline: number; left: number; width: number; slots: Slot[] }
 
 /** `framed`: the stage is a canvas format (square, story…) with nothing laid over it, so the word is simply centred. */
-export function layoutWord(word: string, W: number, H: number, mobile: boolean, framed = false): WordLayout {
+/** `insetRight`: px on the right covered by the open panel; the word is centred in what is left. */
+export function layoutWord(word: string, W: number, H: number, mobile: boolean, framed = false, insetRight = 0): WordLayout {
+  const Wa = Math.max(W * 0.4, W - insetRight);
   const ctx = measurer();
   ctx.font = fontOf(REF);
   const chars = Array.from(word);
   // Desktop: as wide as possible (50–66% of the stage) while staying clear of the 300px panel.
-  const frac = framed ? 0.82 : mobile ? (W < 560 ? 0.84 : 0.72) : Math.min(0.66, Math.max(0.5, (W - 696) / W));
+  const frac = framed ? 0.82 : mobile ? (W < 560 ? 0.84 : 0.72) : 0.72;
   const hFrac = framed ? 0.42 : mobile ? 0.3 : 0.47;
   const centerY = framed ? H * 0.5 : mobile ? H * 0.36 : H * 0.5;
 
@@ -37,7 +39,7 @@ export function layoutWord(word: string, W: number, H: number, mobile: boolean, 
     raw.push({ ch, x: ctx.measureText(prefix).width - adv, adv });
   }
   const total = chars.length ? ctx.measureText(word).width : 0;
-  const byWidth = total > 0 ? (frac * W) / (total / REF) : Infinity;
+  const byWidth = total > 0 ? (frac * Wa) / (total / REF) : Infinity;
   const byHeight = hFrac * H;
   const fs = Math.max(36, Math.min(byWidth, byHeight));
   const s = fs / REF;
@@ -51,7 +53,7 @@ export function layoutWord(word: string, W: number, H: number, mobile: boolean, 
   return {
     fs,
     baseline,
-    left: (W - total * s) / 2,
+    left: (Wa - total * s) / 2,
     width: total * s,
     slots: raw.map((r) => ({ ch: r.ch, x: r.x * s, adv: r.adv * s })),
   };

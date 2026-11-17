@@ -83,7 +83,14 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .tl h1 { margin: 0; font: 400 21px/1.15 var(--serif); letter-spacing: 0.005em; }
 .tl p { margin: 3px 0 0; color: var(--dim); font-size: 12.5px; }
 .tr { top: var(--edge); right: var(--edge); display: flex; gap: 8px; }
-.bl { bottom: var(--edge); left: var(--edge); max-width: min(720px, 58vw); pointer-events: none; }
+/* the middle column: the instructions above, Surprise me below; with the panel open, centred in what it leaves */
+.tc, .bc { left: 50%; transform: translateX(-50%); transition: left 0.42s var(--ease); }
+.tc { top: var(--edge); max-width: min(760px, calc(100% - 520px)); pointer-events: none; }
+.bc { bottom: var(--edge); }
+@media (min-width: 1100px) {
+  .app[data-panel='open'] :is(.tc, .bc) { left: calc((100% - 340px) / 2); }
+  .app[data-panel='open'] :is(.hint, .empty) { right: 340px; }
+}
 .br { bottom: var(--edge); right: var(--edge); display: flex; gap: 8px; }
 
 .icon { flex: none; }
@@ -319,12 +326,13 @@ kbd {
 
 @media (max-width: 1099px) {
   :root { --edge: 14px; }
-  .app[data-panel='open'] :is(.bl, .br, .hint) { opacity: 0; visibility: hidden; }
-  .bl, .br { transition: opacity 0.25s ease, visibility 0s; }
+  .app[data-panel='open'] :is(.tc, .bc, .br, .hint) { opacity: 0; visibility: hidden; }
+  .tc, .bc, .br { transition: opacity 0.25s ease, visibility 0s; }
   .only-wide { display: none !important; }
   .tl p { display: none; }
   .hint { top: 58%; }
-  .bl { bottom: 112px; max-width: calc(100% - 28px); }
+  .tc { top: 60px; max-width: calc(100% - 28px); width: max-content; }
+  .bc { left: auto; right: var(--edge); transform: none; bottom: 62px; }
   .br { bottom: 62px; left: var(--edge); right: auto; }
   .dock li { padding: 2px 9px; font-size: 12.5px; }
   .panel {

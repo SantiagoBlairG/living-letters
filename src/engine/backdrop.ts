@@ -34,7 +34,7 @@ const dot = (o: Partial<Dot>): Dot => ({
   rot: Math.random() * TAU, vr: 0, age: 0, max: Infinity, k: 0, ...o,
 });
 
-type Shape = 'dot' | 'ring' | 'streak' | 'ember' | 'leaf';
+type Shape = 'dot' | 'ring' | 'streak' | 'ember' | 'leaf' | 'flake';
 type Push = 'away' | 'swirl' | 'drag' | 'heat';
 interface Spec {
   n: number; vx: [number, number]; vy: [number, number]; size: [number, number];
@@ -47,6 +47,7 @@ const DRIFT: Record<string, Spec> = {
   'el-fire': { n: 70, vx: [-6, 6], vy: [-46, -18], size: [1, 2.6], sway: 14, shape: 'ember', colors: 'fire', alpha: 0.55, push: 'swirl' },
   'el-air': { n: 26, vx: [40, 85], vy: [-6, 6], size: [3, 6], sway: 18, shape: 'leaf', colors: ['stem', 'flower', 'spark'], alpha: 0.34, push: 'swirl' },
   'el-earth': { n: 60, vx: [-6, 6], vy: [3, 10], size: [1, 2.8], sway: 4, shape: 'dot', colors: ['ink'], alpha: 0.18, push: 'away' },
+  ice: { n: 70, vx: [-6, 6], vy: [10, 28], size: [2.5, 6], sway: 14, shape: 'flake', colors: ['stem', 'ink'], alpha: 0.3, push: 'swirl' },
   'el-water': { n: 95, vx: [-8, -3], vy: [70, 120], size: [9, 18], sway: 0, shape: 'streak', colors: ['stem'], alpha: 0.24, push: 'away' },
 };
 
@@ -67,6 +68,8 @@ export class Backdrop {
   private dots: Dot[] = []; // the kind's own population
   private bits: Dot[] = []; // short-lived: confetti, petals, shards, embers, splashes…
   private stems: Stem[] = [];
+  private trails: number[][] = []; // echo: light trails, the last one is the pointer's
+  private frost: number[][] = []; // ice: crystals grown in from the corners
   private impacts: Impact[] = [];
   private cracks: Crack[] = [];
   private ripples: Ripple[] = [];
@@ -193,7 +196,7 @@ export class Backdrop {
 
   private reseed() {
     const { W, H } = this;
-    this.dots = []; this.bits = []; this.stems = []; this.impacts = []; this.cracks = []; this.ripples = [];
+    this.dots = []; this.bits = []; this.stems = []; this.trails = []; this.frost = []; this.impacts = []; this.cracks = []; this.ripples = [];
     const spec = DRIFT[this.kind];
     if (spec) {
       for (let i = 0; i < spec.n; i++) {
@@ -202,6 +205,30 @@ export class Backdrop {
       }
     }
     switch (this.kind) {
+      case 'focus': // bokeh: soft discs of out-of-focus light
+        for (let i = 0; i < 26; i++) { const vx = rand(-6, 6), vy = rand(-6, 6); this.dots.push(dot({ x: rand(0, W), y: rand(0, H), vx, vy, bx: vx, by: vy, s: rand(14, 46), c: i })); }
+        break;
+      case 'echo':
+        for (let i = 0; i < 6; i++) this.trails.push([]);
+        this.trails.push([]);
+        break;
+      case 'ferro': // metallic droplets that gather toward the hand
+        for (let i = 0; i < 46; i++) { const x = rand(0, W), y = rand(0, H); this.dots.push(dot({ x, y, bx: x, by: y, s: rand(2, 6) })); }
+        break;
+      case 'ice': // frost creeping in from the four corners
+        for (const [cx, cy] of [[0, 0], [W, 0], [0, H], [W, H]]) {
+          for (let i = 0; i < 9; i++) {
+            const a = Math.atan2(H / 2 - cy, W / 2 - cx) + rand(-0.8, 0.8), len = rand(60, 170);
+            const pts = [cx, cy, cx + Math.cos(a) * len, cy + Math.sin(a) * len];
+            for (let b = 0; b < 4; b++) {
+              const u = rand(0.25, 0.85), side = Math.random() < 0.5 ? -1 : 1, bl = len * rand(0.15, 0.3);
+              const bx = cx + Math.cos(a) * len * u, by = cy + Math.sin(a) * len * u;
+              pts.push(bx, by, bx + Math.cos(a + side * 0.9) * bl, by + Math.sin(a + side * 0.9) * bl);
+            }
+            this.frost.push(pts);
+          }
+        }
+        break;
       case 'jelly':
         for (let i = 0; i < 5; i++) this.dots.push(dot({ bx: rand(0.1, 0.9) * W, by: rand(0.15, 0.85) * H, s: rand(0.16, 0.32) * Math.min(W, H) * 1.4 }));
         break;
@@ -278,6 +305,43 @@ export class Backdrop {
     }
 
     switch (kind) {
+      case 'focus':
+        for (const d of this.dots) {
+          const sh = this.shockAt(d.x, d.y);
+          d.x += (d.vx + sh.fx * 300) * dt; d.y += (d.vy + sh.fy * 300) * dt;
+          if (d.x < -60) d.x += W + 120; else if (d.x > W + 60) d.x -= W + 120;
+          if (d.y < -60) d.y += H + 120; else if (d.y > H + 60) d.y -= H + 120;
+        }
+        break;
+      case 'echo': {
+        // slow lights tracing loops; the last trail follows the pointer
+        for (let i = 0; i < this.trails.length; i++) {
+          const tr = this.trails[i];
+          let x: number, y: number;
+          if (i === this.trails.length - 1) { if (pa < 0.05) { tr.length = Math.max(0, tr.length - 4); continue; } x = px; y = py; }
+          else {
+            const tt = this.t * (0.18 + i * 0.03) + i * 1.7;
+            x = W * (0.5 + 0.42 * Math.sin(tt * (1 + i * 0.13))); y = H * (0.5 + 0.38 * Math.sin(tt * 1.7 + i));
+            const sh = this.shockAt(x, y); x += sh.fx * 60; y += sh.fy * 60;
+          }
+          tr.push(x, y);
+          if (tr.length > (i === this.trails.length - 1 ? 70 : 120)) tr.splice(0, 2);
+        }
+        break;
+      }
+      case 'ferro':
+        for (const d of this.dots) { // drawn toward the hand, back to their place when it leaves
+          let tx = d.bx, ty = d.by;
+          if (pa > 0.05) {
+            const dx = px - d.bx, dy = py - d.by, r = Math.hypot(dx, dy) || 1;
+            if (r < 260) { const f = (1 - r / 260) * pa * (this.held ? 0.85 : 0.55); tx += dx * f; ty += dy * f; }
+          }
+          const sh = this.shockAt(d.x, d.y);
+          d.vx += ((tx - d.x) * 14 - d.vx * 5 + sh.fx * 3000) * dt;
+          d.vy += ((ty - d.y) * 14 - d.vy * 5 + sh.fy * 3000) * dt;
+          d.x += d.vx * dt; d.y += d.vy * dt;
+        }
+        break;
       case 'jelly':
         for (const d of this.dots) { // soft blobs pushed aside by the pointer and by clicks, springing back
           const cx = d.bx + d.x, cy = d.by + d.y;
@@ -451,6 +515,11 @@ export class Backdrop {
           ctx.strokeStyle = css(col, al); ctx.lineWidth = 1.1;
           const v = Math.hypot(d.vx, d.vy) || 1;
           ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - (d.vx / v) * d.s, d.y - (d.vy / v) * d.s); ctx.stroke();
+        } else if (spec.shape === 'flake') {
+          ctx.strokeStyle = css(col, al); ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let i = 0; i < 3; i++) { const an = d.rot + (i * Math.PI) / 3; ctx.moveTo(d.x - Math.cos(an) * d.s, d.y - Math.sin(an) * d.s); ctx.lineTo(d.x + Math.cos(an) * d.s, d.y + Math.sin(an) * d.s); }
+          ctx.stroke();
         } else if (spec.shape === 'leaf') {
           ctx.fillStyle = css(col, al);
           ctx.beginPath(); ctx.ellipse(d.x, d.y, d.s * 1.6, d.s * 0.7, d.rot, 0, TAU); ctx.fill();
@@ -462,6 +531,65 @@ export class Backdrop {
     }
 
     switch (k) {
+      case 'focus': {
+        // bokeh discs: wide and faint far from the hand, smaller and sharper near it, as if it were the focus
+        const cols: ColorKey[] = ['spark', 'flower', 'stem', 'ink'];
+        for (const d of this.dots) {
+          const near = pa > 0.05 ? Math.max(0, 1 - Math.hypot(d.x - px, d.y - py) / 260) * pa : 0;
+          const sh = this.shockAt(d.x, d.y).w;
+          const r = d.s * (1 - 0.55 * near) * (1 + sh * 0.6);
+          const col = c[cols[d.c % 4]];
+          ctx.fillStyle = css(col, (0.07 + 0.08 * near) * a);
+          ctx.beginPath(); ctx.arc(d.x, d.y, r, 0, TAU); ctx.fill();
+          ctx.strokeStyle = css(col, (0.08 + 0.2 * near) * a); ctx.lineWidth = 1 + near;
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'echo': {
+        // light trails, as in a long exposure: each fades toward its tail
+        const cols: ColorKey[] = ['flower', 'stem', 'spark'];
+        this.trails.forEach((tr, i) => {
+          const n = tr.length / 2, mine = i === this.trails.length - 1;
+          for (let j = 1; j < n; j++) {
+            ctx.strokeStyle = css(mine ? c.ink : c[cols[i % 3]], (j / n) * (mine ? 0.32 : 0.2) * a);
+            ctx.lineWidth = mine ? 2.2 : 1.6;
+            ctx.beginPath(); ctx.moveTo(tr[(j - 1) * 2], tr[(j - 1) * 2 + 1]); ctx.lineTo(tr[j * 2], tr[j * 2 + 1]); ctx.stroke();
+          }
+        });
+        break;
+      }
+      case 'ferro': {
+        // dark, glossy droplets; near the hand they grow little spikes toward it
+        const metal = mix(c.ink, c.bg, 0.55);
+        for (const d of this.dots) {
+          const dx = px - d.x, dy = py - d.y, r = Math.hypot(dx, dy) || 1;
+          const near = pa > 0.05 ? Math.max(0, 1 - r / 220) * pa : 0;
+          ctx.fillStyle = css(metal, 0.4 * a);
+          ctx.beginPath(); ctx.arc(d.x, d.y, d.s, 0, TAU); ctx.fill();
+          if (near > 0.05) {
+            const ux = dx / r, uy = dy / r, L = d.s * (1 + near * 2.5);
+            ctx.beginPath(); ctx.moveTo(d.x - uy * d.s * 0.6, d.y + ux * d.s * 0.6); ctx.lineTo(d.x + ux * L, d.y + uy * L); ctx.lineTo(d.x + uy * d.s * 0.6, d.y - ux * d.s * 0.6); ctx.fill();
+          }
+          ctx.fillStyle = css(WHITE, 0.16 * a);
+          ctx.beginPath(); ctx.arc(d.x - d.s * 0.35, d.y - d.s * 0.35, d.s * 0.3, 0, TAU); ctx.fill();
+        }
+        break;
+      }
+      case 'ice': {
+        // frost in the corners, brighter where the hand is near and with every click
+        const flash = this.shocks.length ? Math.max(0, 1 - (t - this.shocks[this.shocks.length - 1].born) * 1.5) : 0;
+        const path = new Path2D();
+        for (const pts of this.frost) for (let i = 0; i < pts.length; i += 4) { path.moveTo(pts[i], pts[i + 1]); path.lineTo(pts[i + 2], pts[i + 3]); }
+        ctx.strokeStyle = css(mix(c.stem, WHITE, 0.5), (0.16 + 0.2 * flash) * a); ctx.lineWidth = 1.2;
+        ctx.stroke(path);
+        if (pa > 0.05) {
+          const g = ctx.createRadialGradient(px, py, 0, px, py, 160);
+          g.addColorStop(0, css(mix(c.stem, WHITE, 0.6), 0.07 * pa * a)); g.addColorStop(1, css(c.stem, 0));
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, 160, 0, TAU); ctx.fill();
+        }
+        break;
+      }
       case 'jelly':
         for (const d of this.dots) {
           const x = d.bx + d.x + Math.sin(t * 0.4 + d.ph) * 30, y = d.by + d.y + Math.cos(t * 0.33 + d.ph) * 24;

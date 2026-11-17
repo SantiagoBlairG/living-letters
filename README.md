@@ -2,7 +2,7 @@
 
 A playground for words. Type a word, pick a material, and touch the letters.
 
-Twelve materials, each with its own physics, cursor and sound:
+Sixteen materials, each with its own physics, cursor and sound:
 
 | Material | Hover | Click | Drag |
 | --- | --- | --- | --- |
@@ -17,6 +17,10 @@ Twelve materials, each with its own physics, cursor and sound:
 | Melt | the letter drips from where you touch | a splash that sets the letters running | hold a letter and it pours into a puddle; drag to paint with it |
 | Black hole | bends and stretches the letters toward the pointer | leaves a hole whose reach grows until every letter, nearest first, has orbited in, been stretched into a strand and swallowed; then it spits them back out as a white hole | hold to grow a hole under the hand; at full size it swallows the interface too; let go to release everything |
 | Elements | fire sets letters alight · air makes them flutter · earth turns them to stone · water rains on them | fireball · tornado · earthquake · downpour | trail of fire · gust · cracks · moves the storm |
+| Focus | depth of field: only what is near the pointer is sharp | racks the focus | zooms in, blurring outward |
+| Echo | letters smear, leaving tinted echoes | a strobe throws off copies | letters split into orbiting ghosts |
+| Ferrofluid | spikes rise from the edges toward the pointer | every edge bristles | the liquid is pulled toward the hand |
+| Ice | frost grows in branching crystals | freezes letters solid | melts the frost, which drips, and refreezes on release |
 | Gravity | the pointer is a ball that shoves letters | flips gravity (on a letter: kicks it) | pick a letter up and throw it |
 
 ## Run it
@@ -62,7 +66,7 @@ src/
     stage.ts              the single requestAnimationFrame loop, pointer input, the "world"
     layout.ts             word sizing, kerned glyph positions, glyph alpha masks + outline points
     simulation.ts         damped springs per letter (position, rotation, scale, skew), delta time
-    materials/            jelly, balloon, magnet, bloom, float, wave, gravity, explode, sand, melt, blackhole, elements — one behaviour each (gravity runs its own rigid-body step)
+    materials/            jelly, balloon, magnet, bloom, float, wave, gravity, explode, sand, melt, blackhole, elements, focus, echo, ferro, ice — one behaviour each (gravity runs its own rigid-body step)
     plants.ts             Bloom's vector garden, anchored to glyph silhouettes
     effects.ts            rings, pulses, gusts, bursts
     cursor.ts             the four drawn cursors

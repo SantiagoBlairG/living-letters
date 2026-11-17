@@ -128,6 +128,26 @@ export const MATERIALS: MaterialInfo[] = [
     id: 'elements', label: 'Elements', note: 'Fire, air, earth and water',
     help: '', touchHelp: '', // each element has its own; see ELEMENTS
   },
+  {
+    id: 'focus', label: 'Focus', note: 'A lens with depth of field',
+    help: 'Hover to focus · Click to rack focus · Hold to zoom',
+    touchHelp: 'Touch to focus · Tap to rack focus · Hold to zoom',
+  },
+  {
+    id: 'echo', label: 'Echo', note: 'Ghosts of a long exposure',
+    help: 'Hover to smear · Click to strobe · Hold to split into ghosts',
+    touchHelp: 'Swipe to smear · Tap to strobe · Hold to split into ghosts',
+  },
+  {
+    id: 'ferro', label: 'Ferrofluid', note: 'Magnetic liquid, spiking',
+    help: 'Hover to raise spikes · Click to bristle · Hold to pull the liquid',
+    touchHelp: 'Touch to raise spikes · Tap to bristle · Hold to pull',
+  },
+  {
+    id: 'ice', label: 'Ice', note: 'Frost that grows and melts',
+    help: 'Hover to grow frost · Click to freeze · Hold to melt',
+    touchHelp: 'Touch to grow frost · Tap to freeze · Hold to melt',
+  },
 ];
 
 /** The four elements of the Elements material, each with its own gestures. */
@@ -152,6 +172,10 @@ export const TUNES: Record<MaterialId, { label: string; hint: string }> = {
   melt: { label: 'Flow', hint: 'How runny the liquid is' },
   blackhole: { label: 'Mass', hint: 'How strongly the holes pull' },
   elements: { label: 'Strength', hint: 'How fierce the element is' },
+  focus: { label: 'Depth', hint: 'How shallow the focus is' },
+  echo: { label: 'Trail', hint: 'How long the echoes last' },
+  ferro: { label: 'Spikes', hint: 'How tall the spikes grow' },
+  ice: { label: 'Cold', hint: 'How fast the frost grows' },
 };
 
 export const SUGGESTIONS = ['hello', 'jelly', 'bloom', 'float', 'chaos'];
@@ -190,4 +214,12 @@ export const PRESETS: { word: string; material: MaterialId; palette: string }[] 
   { word: 'cosmos', material: 'blackhole', palette: 'cobalt' },
   { word: 'storm', material: 'elements', palette: 'night' },
   { word: 'fuego', material: 'elements', palette: 'ember' },
+  { word: 'blur', material: 'focus', palette: 'midnight' },
+  { word: 'lens', material: 'focus', palette: 'dusk' },
+  { word: 'ghost', material: 'echo', palette: 'plum' },
+  { word: 'again', material: 'echo', palette: 'aurora' },
+  { word: 'spike', material: 'ferro', palette: 'slate' },
+  { word: 'metal', material: 'ferro', palette: 'night' },
+  { word: 'frost', material: 'ice', palette: 'ocean' },
+  { word: 'winter', material: 'ice', palette: 'midnight' },
 ];

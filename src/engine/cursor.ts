@@ -152,6 +152,40 @@ export class CursorView {
         ctx.fillStyle = css(colors.stem);
         ctx.beginPath(); ctx.moveTo(0, -7); ctx.bezierCurveTo(4, -2, 5, 1, 5, 3); ctx.arc(0, 3, 5, 0, Math.PI); ctx.bezierCurveTo(-5, 1, -4, -2, 0, -7); ctx.fill();
       }
+    } else if (mat === 'ferro') {
+      // a drop of ferrofluid with spikes turning slowly
+      ctx.fillStyle = css(colors.ink);
+      ctx.beginPath(); ctx.arc(0, 0, 5.5 - press * 1.5, 0, 6.2832); ctx.fill();
+      ctx.beginPath();
+      for (let i = 0; i < 7; i++) {
+        const a = this.spin * 0.5 + (i * 6.2832) / 7, L = 10 + press * 5;
+        ctx.moveTo(Math.cos(a - 0.35) * 4.5, Math.sin(a - 0.35) * 4.5);
+        ctx.lineTo(Math.cos(a) * L, Math.sin(a) * L);
+        ctx.lineTo(Math.cos(a + 0.35) * 4.5, Math.sin(a + 0.35) * 4.5);
+      }
+      ctx.fill();
+    } else if (mat === 'ice') {
+      // a snowflake
+      ctx.rotate(this.spin * 0.25);
+      ctx.strokeStyle = css(colors.stem); ctx.lineWidth = 1.5;
+      const r = 9 + press * 3;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3, c = Math.cos(a), s = Math.sin(a);
+        ctx.moveTo(0, 0); ctx.lineTo(c * r, s * r);
+        ctx.moveTo(c * r * 0.6, s * r * 0.6); ctx.lineTo(c * r * 0.6 + Math.cos(a + 0.8) * 3.5, s * r * 0.6 + Math.sin(a + 0.8) * 3.5);
+        ctx.moveTo(c * r * 0.6, s * r * 0.6); ctx.lineTo(c * r * 0.6 + Math.cos(a - 0.8) * 3.5, s * r * 0.6 + Math.sin(a - 0.8) * 3.5);
+      }
+      ctx.stroke();
+    } else if (mat === 'echo') {
+      // a dot with fading copies behind it
+      for (let i = 3; i >= 0; i--) {
+        ctx.fillStyle = css(i ? colors.flower : colors.ink, i ? 0.5 - i * 0.12 : 1);
+        ctx.beginPath(); ctx.arc(-this.vx * 0.012 * i, -this.vy * 0.012 * i, 4.5 - i * 0.6 + press, 0, 6.2832); ctx.fill();
+      }
+    } else if (mat === 'focus') {
+      ctx.fillStyle = css(colors.spark);
+      ctx.beginPath(); ctx.arc(0, 0, 2.6, 0, 6.2832); ctx.fill();
     } else if (mat === 'sand') {
       // a few grains that spread apart as the hand speeds up
       const spread = 3.5 + Math.min(speed * 0.006, 7) + press * 3;

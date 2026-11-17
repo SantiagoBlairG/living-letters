@@ -26,6 +26,10 @@ export function Glyph({ id }: { id: MaterialId }) {
       {id === 'gravity' && (<><path d="M16 5v13M10.5 13l5.5 5.5 5.5-5.5" strokeLinejoin="round" /><path d="M6 26h20" /></>)}
       {id === 'blackhole' && (<><ellipse cx="16" cy="16" rx="13" ry="4.5" transform="rotate(-15 16 16)" /><circle cx="16" cy="16" r="5.5" fill="currentColor" stroke="none" /></>)}
       {id === 'elements' && (<g stroke="none" fill="currentColor"><path d="M10 4c3 3 4 6 1.5 9.5C9.5 11 9 9 10 4Z" /><path d="M22 4c4 4 4 9 0 11-4-2-4-7 0-11Z" opacity=".55" /><path d="M4 27l6-9 4 5 3-3 6 7Z" opacity=".55" /><path d="M21 19c1.5 2.4 3 4.2 3 5.8a3 3 0 0 1-6 0c0-1.6 1.5-3.4 3-5.8Z" /></g>)}
+      {id === 'focus' && (<><path d="M5 11V6h5M27 11V6h-5M5 21v5h5M27 21v5h-5" /><circle cx="16" cy="16" r="4.2" /><circle cx="16" cy="16" r="1.4" fill="currentColor" stroke="none" /></>)}
+      {id === 'echo' && (<g fill="currentColor" stroke="none"><circle cx="21" cy="16" r="5.5" /><circle cx="13.5" cy="16" r="4.5" opacity=".5" /><circle cx="7.5" cy="16" r="3.5" opacity=".25" /></g>)}
+      {id === 'ferro' && (<path d="M5 25c3-1 3.5-6 5-12 1.5 6 2 9.5 6 10 4-.5 4.5-4 6-10 1.5 6 2 11 5 12Z" fill="currentColor" stroke="none" />)}
+      {id === 'ice' && (<><path d="M16 4v24M5.6 10l20.8 12M5.6 22l20.8-12" /><path d="M13 6.5 16 9l3-2.5M13 25.5 16 23l3 2.5M6 14l3.4-1-1-3.4M26 18l-3.4 1 1 3.4M6 18l3.4 1-1 3.4M26 14l-3.4-1 1-3.4" /></>)}
       {id === 'float' && (<><circle cx="21" cy="11" r="3.4" fill="currentColor" stroke="none" /><path d="M17 15C12 19 8 21 4 26M19 18c-3 3-5 5-7 8" opacity=".7" /></>)}
     </svg>
   );

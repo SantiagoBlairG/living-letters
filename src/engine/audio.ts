@@ -1,8 +1,8 @@
 /** Tiny synthesized sounds. Nothing is created until the user turns sound on. */
 
-export type SoundName = 'press' | 'pop' | 'boing' | 'pulse' | 'sprout' | 'flower' | 'gust' | 'thud' | 'flip' | 'bang' | 'squeak' | 'drip' | 'crack' | 'shatter' | 'boom' | 'sand' | 'splat';
+export type SoundName = 'press' | 'pop' | 'boing' | 'pulse' | 'sprout' | 'flower' | 'gust' | 'thud' | 'flip' | 'bang' | 'squeak' | 'drip' | 'crack' | 'shatter' | 'boom' | 'sand' | 'splat' | 'shutter';
 
-const GAP: Record<SoundName, number> = { press: 90, pop: 90, boing: 120, pulse: 140, sprout: 130, flower: 160, gust: 180, thud: 70, flip: 200, bang: 90, squeak: 150, drip: 110, crack: 110, shatter: 70, boom: 220, sand: 90, splat: 100 };
+const GAP: Record<SoundName, number> = { press: 90, pop: 90, boing: 120, pulse: 140, sprout: 130, flower: 160, gust: 180, thud: 70, flip: 200, bang: 90, squeak: 150, drip: 110, crack: 110, shatter: 70, boom: 220, sand: 90, splat: 100, shutter: 160 };
 const SCALE = [523.25, 587.33, 659.25, 783.99, 880, 1046.5];
 
 export class Sound {
@@ -91,6 +91,7 @@ export class Sound {
       }
       case 'squeak': this.tone('triangle', 420 + amount * 520, 470 + amount * 560, 0.11, 0.07); break;
       case 'drip': this.tone('sine', 360, 1250, 0.08, 0.32 * v); this.tone('sine', 900, 620, 0.14, 0.12 * v, 0.06); break;
+      case 'shutter': this.hiss('bandpass', 3800, 0.03, 0.3 * v); this.hiss('bandpass', 2600, 0.04, 0.22 * v, 0.07); break;
       case 'sand': this.hiss('bandpass', 2600, 0.12, 0.1 * v); break;
       case 'splat': this.hiss('lowpass', 700, 0.18, 0.45 * v); this.tone('sine', 260, 90, 0.14, 0.3 * v); break;
       case 'crack': this.hiss('highpass', 3200, 0.05, 0.22 * v); break;

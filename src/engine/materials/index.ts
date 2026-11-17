@@ -11,5 +11,9 @@ import { sand } from './sand';
 import { melt } from './melt';
 import { blackhole } from './blackhole';
 import { elements } from './elements';
+import { focus } from './focus';
+import { echo } from './echo';
+import { ferro } from './ferro';
+import { ice } from './ice';
 
-export const BEHAVIORS: Record<MaterialId, Material> = { jelly, magnet, bloom, float, gravity, balloon, wave, explode, sand, melt, blackhole, elements };
+export const BEHAVIORS: Record<MaterialId, Material> = { jelly, magnet, bloom, float, gravity, balloon, wave, explode, sand, melt, blackhole, elements, focus, echo, ferro, ice };

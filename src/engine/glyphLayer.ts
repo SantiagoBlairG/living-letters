@@ -29,7 +29,9 @@ export function glyphLayer(ctx: CanvasRenderingContext2D, l: Letter, liftPx: num
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.globalCompositeOperation = 'source-over';
   g.globalAlpha = 1;
-  g.clearRect(0, 0, W, H);
+  // clear a margin beyond the used area too: when the layer is laid down with smoothing, the edge pixels
+  // are blended with their neighbours, and leftovers from an earlier, larger letter showed as thin lines
+  g.clearRect(0, 0, Math.min(scratch.width, W + 4), Math.min(scratch.height, H + 4));
   g.setTransform(kx, 0, 0, ky, -x0 * kx, -y0 * ky);
   g.font = ctx.font; g.textBaseline = ctx.textBaseline; g.fillStyle = ctx.fillStyle;
   g.fillText(l.ch, -l.adv / 2, liftPx);

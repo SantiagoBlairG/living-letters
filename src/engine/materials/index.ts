@@ -14,10 +14,10 @@ import { elements } from './elements';
 import { focus } from './focus';
 import { echo } from './echo';
 import { ferro } from './ferro';
-import { ice } from './ice';
+import { glitch } from './glitch';
 import { kaleido } from './kaleido';
-import { origami } from './origami';
+import { lava } from './lava';
 import { mirage } from './mirage';
 import { bubble } from './bubble';
 
-export const BEHAVIORS: Record<MaterialId, Material> = { jelly, magnet, bloom, float, gravity, balloon, wave, explode, sand, melt, blackhole, elements, focus, echo, ferro, ice, kaleido, origami, mirage, bubble };
+export const BEHAVIORS: Record<MaterialId, Material> = { jelly, magnet, bloom, float, gravity, balloon, wave, explode, sand, melt, blackhole, elements, focus, echo, ferro, glitch, kaleido, lava, mirage, bubble };

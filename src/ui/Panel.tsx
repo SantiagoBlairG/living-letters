@@ -29,9 +29,9 @@ export function Glyph({ id }: { id: MaterialId }) {
       {id === 'focus' && (<><path d="M5 11V6h5M27 11V6h-5M5 21v5h5M27 21v5h-5" /><circle cx="16" cy="16" r="4.2" /><circle cx="16" cy="16" r="1.4" fill="currentColor" stroke="none" /></>)}
       {id === 'echo' && (<g fill="currentColor" stroke="none"><circle cx="21" cy="16" r="5.5" /><circle cx="13.5" cy="16" r="4.5" opacity=".5" /><circle cx="7.5" cy="16" r="3.5" opacity=".25" /></g>)}
       {id === 'ferro' && (<path d="M5 25c3-1 3.5-6 5-12 1.5 6 2 9.5 6 10 4-.5 4.5-4 6-10 1.5 6 2 11 5 12Z" fill="currentColor" stroke="none" />)}
-      {id === 'ice' && (<><path d="M16 4v24M5.6 10l20.8 12M5.6 22l20.8-12" /><path d="M13 6.5 16 9l3-2.5M13 25.5 16 23l3 2.5M6 14l3.4-1-1-3.4M26 18l-3.4 1 1 3.4M6 18l3.4 1-1 3.4M26 14l-3.4-1 1-3.4" /></>)}
+      {id === 'glitch' && (<g fill="currentColor" stroke="none"><rect x="5" y="7" width="16" height="4" /><rect x="10" y="13" width="17" height="4" opacity=".55" /><rect x="4" y="19" width="13" height="4" /><rect x="19" y="19" width="6" height="4" opacity=".55" /></g>)}
       {id === 'kaleido' && (<><path d="M16 4 26.4 10v12L16 28 5.6 22V10Z" /><path d="M16 4v24M5.6 10l20.8 12M5.6 22l20.8-12" opacity=".55" /></>)}
-      {id === 'origami' && (<path d="M4 24 16 6l4 9 8-3-6 14-6-4Z M16 6l0 16 M20 15l-4 7" strokeLinejoin="round" />)}
+      {id === 'lava' && (<><path d="M11 4h10l3 22H8Z" strokeLinejoin="round" /><circle cx="15" cy="20" r="3.4" fill="currentColor" stroke="none" /><circle cx="18" cy="11" r="2.2" fill="currentColor" stroke="none" /></>)}
       {id === 'mirage' && (<><path d="M5 9c2.5-2 5-2 7.5 0s5 2 7.5 0 5-2 7.5 0M5 14c2.5-2 5-2 7.5 0s5 2 7.5 0 5-2 7.5 0" /><path d="M4 19h24" /><path d="M5 24c2.5-1.4 5-1.4 7.5 0s5 1.4 7.5 0 5-1.4 7.5 0" opacity=".45" /></>)}
       {id === 'bubble' && (<><circle cx="13" cy="15" r="8.5" /><circle cx="23.5" cy="22.5" r="4.5" /><path d="M8.5 12.5a5 5 0 0 1 3-3.4" /></>)}
       {id === 'float' && (<><circle cx="21" cy="11" r="3.4" fill="currentColor" stroke="none" /><path d="M17 15C12 19 8 21 4 26M19 18c-3 3-5 5-7 8" opacity=".7" /></>)}

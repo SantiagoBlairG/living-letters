@@ -160,14 +160,12 @@ export class CursorView {
       for (let i = 0; i <= 6; i++) { const a = (i * Math.PI) / 3; if (i) ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); else ctx.moveTo(r, 0); }
       for (let i = 0; i < 3; i++) { const a = (i * Math.PI) / 3; ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); ctx.lineTo(-Math.cos(a) * r, -Math.sin(a) * r); }
       ctx.stroke();
-    } else if (mat === 'origami') {
-      // a paper plane, pointing the way the hand moves
-      ctx.rotate(Math.atan2(this.vy, this.vx || 0.001) * Math.min(1, speed / 200));
-      const k = 1 - press * 0.25;
-      ctx.fillStyle = css(colors.ink);
-      ctx.beginPath(); ctx.moveTo(12 * k, 0); ctx.lineTo(-9 * k, -8 * k); ctx.lineTo(-4 * k, 0); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = css(colors.ink, 0.6);
-      ctx.beginPath(); ctx.moveTo(12 * k, 0); ctx.lineTo(-9 * k, 8 * k); ctx.lineTo(-4 * k, 0); ctx.closePath(); ctx.fill();
+    } else if (mat === 'lava') {
+      // a blob with a smaller one breaking away from it
+      ctx.fillStyle = css(colors.flower);
+      ctx.beginPath(); ctx.arc(0, 0, 6 + press * 2, 0, 6.2832); ctx.fill();
+      const a = this.spin * 0.8;
+      ctx.beginPath(); ctx.arc(Math.cos(a) * 9, Math.sin(a) * 9 - 2, 3, 0, 6.2832); ctx.fill();
     } else if (mat === 'mirage') {
       ctx.strokeStyle = css(colors.flower); ctx.lineWidth = 1.6;
       ctx.beginPath();
@@ -196,19 +194,12 @@ export class CursorView {
         ctx.lineTo(Math.cos(a + 0.35) * 4.5, Math.sin(a + 0.35) * 4.5);
       }
       ctx.fill();
-    } else if (mat === 'ice') {
-      // a snowflake
-      ctx.rotate(this.spin * 0.25);
-      ctx.strokeStyle = css(colors.stem); ctx.lineWidth = 1.5;
-      const r = 9 + press * 3;
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const a = (i * Math.PI) / 3, c = Math.cos(a), s = Math.sin(a);
-        ctx.moveTo(0, 0); ctx.lineTo(c * r, s * r);
-        ctx.moveTo(c * r * 0.6, s * r * 0.6); ctx.lineTo(c * r * 0.6 + Math.cos(a + 0.8) * 3.5, s * r * 0.6 + Math.sin(a + 0.8) * 3.5);
-        ctx.moveTo(c * r * 0.6, s * r * 0.6); ctx.lineTo(c * r * 0.6 + Math.cos(a - 0.8) * 3.5, s * r * 0.6 + Math.sin(a - 0.8) * 3.5);
-      }
-      ctx.stroke();
+    } else if (mat === 'glitch') {
+      // a pixel, its channels slipping apart
+      const j = (Math.sin(this.spin * 23) > 0.6 ? 3 : 0) + press * 3;
+      ctx.fillStyle = 'rgba(255,40,90,0.9)'; ctx.fillRect(-6 - j, -6, 10, 10);
+      ctx.fillStyle = 'rgba(40,225,255,0.9)'; ctx.fillRect(-4 + j, -4, 10, 10);
+      ctx.fillStyle = css(colors.ink); ctx.fillRect(-5, -5, 10, 10);
     } else if (mat === 'echo') {
       // a dot with fading copies behind it
       for (let i = 3; i >= 0; i--) {

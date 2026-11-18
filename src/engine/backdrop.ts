@@ -19,6 +19,8 @@ const WHITE: RGB = [255, 255, 255];
 const SHOCK_LIFE = 1.4;
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
+/** Stable pseudo-random numbers, for noise that must hold still within a frame. */
+const hash = (a: number, b: number) => { const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return v - Math.floor(v); };
 const easeOut = (x: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -49,7 +51,6 @@ const DRIFT: Record<string, Spec> = {
   'el-fire': { n: 70, vx: [-6, 6], vy: [-46, -18], size: [1, 2.6], sway: 14, shape: 'ember', colors: 'fire', alpha: 0.55, push: 'swirl' },
   'el-air': { n: 26, vx: [40, 85], vy: [-6, 6], size: [3, 6], sway: 18, shape: 'leaf', colors: ['stem', 'flower', 'spark'], alpha: 0.34, push: 'swirl' },
   'el-earth': { n: 60, vx: [-6, 6], vy: [3, 10], size: [1, 2.8], sway: 4, shape: 'dot', colors: ['ink'], alpha: 0.18, push: 'away' },
-  ice: { n: 70, vx: [-6, 6], vy: [10, 28], size: [2.5, 6], sway: 14, shape: 'flake', colors: ['stem', 'ink'], alpha: 0.3, push: 'swirl' },
   'el-water': { n: 95, vx: [-8, -3], vy: [70, 120], size: [9, 18], sway: 0, shape: 'streak', colors: ['stem'], alpha: 0.24, push: 'away' },
 };
 
@@ -71,8 +72,6 @@ export class Backdrop {
   private bits: Dot[] = []; // short-lived: confetti, petals, shards, embers, splashes…
   private stems: Stem[] = [];
   private trails: number[][] = []; // echo: light trails, the last one is the pointer's
-  private frost: number[][] = []; // ice: crystals grown in from the corners
-  private tris: { pts: number[]; n: number; s: number }[] = []; // origami: a sheet of folded paper
   private horizon = 0; // mirage
   private impacts: Impact[] = [];
   private cracks: Crack[] = [];
@@ -206,7 +205,7 @@ export class Backdrop {
 
   private reseed() {
     const { W, H } = this;
-    this.dots = []; this.bits = []; this.stems = []; this.trails = []; this.frost = []; this.tris = []; this.impacts = []; this.cracks = []; this.ripples = [];
+    this.dots = []; this.bits = []; this.stems = []; this.trails = []; this.impacts = []; this.cracks = []; this.ripples = [];
     const spec = DRIFT[this.kind];
     if (spec) {
       for (let i = 0; i < spec.n; i++) {
@@ -215,17 +214,9 @@ export class Backdrop {
       }
     }
     switch (this.kind) {
-      case 'origami': { // a large sheet folded into facets
-        const cols = 9, rows = 6, gx = W / cols, gy = H / rows, P: number[][] = [];
-        for (let j = 0; j <= rows; j++) { P.push([]); for (let i = 0; i <= cols; i++) { const edge = i === 0 || j === 0 || i === cols || j === rows; P[j].push(i * gx + (edge ? 0 : rand(-0.3, 0.3) * gx), j * gy + (edge ? 0 : rand(-0.3, 0.3) * gy)); } }
-        for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-          const a = [P[j][i * 2], P[j][i * 2 + 1]], b = [P[j][i * 2 + 2], P[j][i * 2 + 3]], c2 = [P[j + 1][i * 2], P[j + 1][i * 2 + 1]], d = [P[j + 1][i * 2 + 2], P[j + 1][i * 2 + 3]];
-          const flip = Math.random() < 0.5;
-          this.tris.push({ pts: flip ? [...a, ...b, ...d] : [...a, ...b, ...c2], n: rand(0, TAU), s: rand(0, 1) });
-          this.tris.push({ pts: flip ? [...a, ...d, ...c2] : [...b, ...d, ...c2], n: rand(0, TAU), s: rand(0, 1) });
-        }
+      case 'lava': // big, slow blobs of colour in a dark lamp
+        for (let i = 0; i < 7; i++) { const v = rand(14, 30) * (Math.random() < 0.5 ? -1 : 1); this.dots.push(dot({ x: rand(0.1, 0.9) * W, y: rand(0, H), vy: v, by: v, s: rand(0.12, 0.24) * Math.max(W, H), c: i })); }
         break;
-      }
       case 'bubble':
         for (let i = 0; i < 22; i++) { const v = rand(-30, -10); this.dots.push(dot({ x: rand(0, W), y: rand(0, H * 1.2), vy: v, by: v, s: rand(8, 34) })); }
         break;
@@ -238,20 +229,6 @@ export class Backdrop {
         break;
       case 'ferro': // metallic droplets that gather toward the hand
         for (let i = 0; i < 46; i++) { const x = rand(0, W), y = rand(0, H); this.dots.push(dot({ x, y, bx: x, by: y, s: rand(2, 6) })); }
-        break;
-      case 'ice': // frost creeping in from the four corners
-        for (const [cx, cy] of [[0, 0], [W, 0], [0, H], [W, H]]) {
-          for (let i = 0; i < 9; i++) {
-            const a = Math.atan2(H / 2 - cy, W / 2 - cx) + rand(-0.8, 0.8), len = rand(60, 170);
-            const pts = [cx, cy, cx + Math.cos(a) * len, cy + Math.sin(a) * len];
-            for (let b = 0; b < 4; b++) {
-              const u = rand(0.25, 0.85), side = Math.random() < 0.5 ? -1 : 1, bl = len * rand(0.15, 0.3);
-              const bx = cx + Math.cos(a) * len * u, by = cy + Math.sin(a) * len * u;
-              pts.push(bx, by, bx + Math.cos(a + side * 0.9) * bl, by + Math.sin(a + side * 0.9) * bl);
-            }
-            this.frost.push(pts);
-          }
-        }
         break;
       case 'jelly':
         for (let i = 0; i < 5; i++) this.dots.push(dot({ bx: rand(0.1, 0.9) * W, by: rand(0.15, 0.85) * H, s: rand(0.16, 0.32) * Math.min(W, H) * 1.4 }));
@@ -329,6 +306,15 @@ export class Backdrop {
     }
 
     switch (kind) {
+      case 'lava':
+        for (const b of this.dots) { // rising and sinking, drawn sideways toward the hand, sent up by clicks
+          if (b.y < -b.s * 0.3 && b.vy < 0) b.by = Math.abs(b.by); else if (b.y > H + b.s * 0.3 && b.vy > 0) b.by = -Math.abs(b.by);
+          b.vy += (b.by - b.vy) * Math.min(1, dt * 0.6);
+          if (pa > 0.05) b.vx += ((px - b.x) * 0.15 * pa - b.vx * 0.8) * dt; else b.vx *= 1 - Math.min(1, dt);
+          const sh = this.shockAt(b.x, b.y); b.vy -= sh.w * 400 * dt;
+          b.x += b.vx * dt; b.y += b.vy * dt;
+        }
+        break;
       case 'mirage': this.horizon = st.baseline + st.fs * 0.04; break;
       case 'bubble':
         for (const b of this.dots) { // rising bubbles, nudged aside by the hand, blown by clicks
@@ -589,17 +575,36 @@ export class Backdrop {
         ctx.restore();
         break;
       }
-      case 'origami': {
-        // folded paper, its facets catching a light that sits where the hand is
-        const lx = pa > 0.05 ? px : W * (0.5 + 0.3 * Math.cos(t * 0.2)), ly = pa > 0.05 ? py : H * 0.3;
-        for (const tr of this.tris) {
-          const q = tr.pts, mx = (q[0] + q[2] + q[4]) / 3, my = (q[1] + q[3] + q[5]) / 3;
-          const toLight = Math.atan2(ly - my, lx - mx), lit = Math.cos(tr.n - toLight);
-          const near = Math.max(0, 1 - Math.hypot(lx - mx, ly - my) / Math.max(W, H));
-          const sh = this.shockAt(mx, my).w;
-          ctx.fillStyle = lit > 0 ? css(c.ink, (0.015 + 0.06 * lit * near + 0.08 * sh) * a) : css(c.bg, Math.min(0.6, (0.2 * -lit + 0.05) * a));
-          ctx.beginPath(); ctx.moveTo(q[0], q[1]); ctx.lineTo(q[2], q[3]); ctx.lineTo(q[4], q[5]); ctx.closePath(); ctx.fill();
-          ctx.strokeStyle = css(c.ink, 0.045 * a); ctx.lineWidth = 1; ctx.stroke();
+      case 'lava': {
+        // the lamp behind: big soft blobs of colour rising and sinking
+        const cols: ColorKey[] = ['flower', 'spark', 'stem'];
+        for (const b of this.dots) {
+          const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.s);
+          g.addColorStop(0, css(c[cols[b.c % 3]], 0.16 * a)); g.addColorStop(1, css(c[cols[b.c % 3]], 0));
+          ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(b.x, b.y, b.s, b.s * 1.2, 0, 0, TAU); ctx.fill();
+        }
+        break;
+      }
+      case 'glitch': {
+        // scanlines, and blocks of noise that flash — more near the pointer and with each click
+        ctx.fillStyle = css(c.ink, 0.035 * a);
+        for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 1);
+        const frame = Math.floor(t * 12);
+        let burst = 0;
+        for (const sh of this.shocks) burst += Math.max(0, 1 - (t - sh.born) * 2);
+        const n = 5 + Math.round(8 * pa + 26 * burst);
+        for (let i = 0; i < n; i++) {
+          const near = i < 8 * pa && pa > 0.05;
+          const x = near ? px + (hash(frame, i) - 0.5) * 360 : hash(frame, i) * W;
+          const y = near ? py + (hash(frame, i + 50) - 0.5) * 220 : hash(frame, i + 50) * H;
+          const w2 = 20 + hash(frame, i + 100) * 160, h2 = 2 + hash(frame, i + 150) * 10;
+          const k = hash(frame, i + 200);
+          ctx.fillStyle = k < 0.33 ? `rgba(255,40,90,${0.14 * a})` : k < 0.66 ? `rgba(40,225,255,${0.14 * a})` : css(c.ink, 0.1 * a);
+          ctx.fillRect(x, y, w2, h2);
+        }
+        if (hash(frame, 999) < 0.15 + burst * 0.5) { // a tear across the screen
+          const y = hash(frame, 998) * H;
+          ctx.fillStyle = css(c.ink, 0.12 * a); ctx.fillRect(0, y, W, 1.5);
         }
         break;
       }
@@ -670,20 +675,6 @@ export class Backdrop {
           }
           ctx.fillStyle = css(WHITE, 0.16 * a);
           ctx.beginPath(); ctx.arc(d.x - d.s * 0.35, d.y - d.s * 0.35, d.s * 0.3, 0, TAU); ctx.fill();
-        }
-        break;
-      }
-      case 'ice': {
-        // frost in the corners, brighter where the hand is near and with every click
-        const flash = this.shocks.length ? Math.max(0, 1 - (t - this.shocks[this.shocks.length - 1].born) * 1.5) : 0;
-        const path = new Path2D();
-        for (const pts of this.frost) for (let i = 0; i < pts.length; i += 4) { path.moveTo(pts[i], pts[i + 1]); path.lineTo(pts[i + 2], pts[i + 3]); }
-        ctx.strokeStyle = css(mix(c.stem, WHITE, 0.5), (0.16 + 0.2 * flash) * a); ctx.lineWidth = 1.2;
-        ctx.stroke(path);
-        if (pa > 0.05) {
-          const g = ctx.createRadialGradient(px, py, 0, px, py, 160);
-          g.addColorStop(0, css(mix(c.stem, WHITE, 0.6), 0.07 * pa * a)); g.addColorStop(1, css(c.stem, 0));
-          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, 160, 0, TAU); ctx.fill();
         }
         break;
       }

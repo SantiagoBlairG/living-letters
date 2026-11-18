@@ -17,7 +17,7 @@ const TAU = Math.PI * 2;
 const FIRE: RGB[] = [[255, 214, 90], [255, 138, 31], [232, 56, 28]];
 const WHITE: RGB = [255, 255, 255];
 const SHOCK_LIFE = 1.4;
-const CRACK_LIFE = 4; // seconds a clicked crack stays before it fades (over one more second)
+const CRACK_LIFE = 2; // seconds a clicked crack stays before it fades (over one more second)
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 /** Stable pseudo-random numbers, for noise that must hold still within a frame. */

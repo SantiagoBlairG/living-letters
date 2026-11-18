@@ -17,6 +17,7 @@ const TAU = Math.PI * 2;
 const FIRE: RGB[] = [[255, 214, 90], [255, 138, 31], [232, 56, 28]];
 const WHITE: RGB = [255, 255, 255];
 const SHOCK_LIFE = 1.4;
+const CRACK_LIFE = 4; // seconds a clicked crack stays before it fades (over one more second)
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 /** Stable pseudo-random numbers, for noise that must hold still within a frame. */
@@ -56,7 +57,7 @@ const DRIFT: Record<string, Spec> = {
 
 interface Stem { x: number; h: number; lean: number; v: number; flower: boolean; ph: number }
 interface Crack { pts: number[]; born: number; imp: Impact }
-interface Impact { x: number; y: number; dead: number }
+interface Impact { x: number; y: number; dead: number; expires: number } // expires: when it starts to fade (Infinity: stays)
 interface Ripple { x: number; y: number; born: number; big: boolean }
 interface Shock { x: number; y: number; born: number }
 
@@ -167,7 +168,7 @@ export class Backdrop {
 
   /** A crack web: rays out from the point, branches, and rings joining the rays. */
   private impact(x: number, y: number, born: number) {
-    const imp: Impact = { x, y, dead: -1 };
+    const imp: Impact = { x, y, dead: -1, expires: born < 0 ? Infinity : this.t + CRACK_LIFE }; // the web it starts with stays; clicked ones fade
     this.impacts.push(imp);
     const live = this.impacts.filter((i) => i.dead < 0);
     if (live.length > 3) live[0].dead = this.t;
@@ -438,6 +439,7 @@ export class Backdrop {
           if (d.x < -30) d.x += W + 60; else if (d.x > W + 30) d.x -= W + 60;
           if (d.y < -30) d.y += H + 60; else if (d.y > H + 30) d.y -= H + 60;
         }
+        for (const i of this.impacts) if (i.dead < 0 && this.t > i.expires) i.dead = this.t; // clicked cracks fade after a few seconds
         this.impacts = this.impacts.filter((i) => i.dead < 0 || this.t - i.dead < 1);
         this.cracks = this.cracks.filter((c) => this.impacts.includes(c.imp));
         break;

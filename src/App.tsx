@@ -9,7 +9,7 @@ import { Icon } from './ui/Icon';
 import { ExportMenu } from './ui/ExportMenu';
 import { QuickControls } from './ui/QuickControls';
 import { ColorPop } from './ui/ColorPop';
-import { Glyph } from './ui/Panel';
+import { ElementIcon, Glyph } from './ui/Panel';
 
 const MAX_REC = 20; // seconds
 const VIDEO = videoType();
@@ -82,7 +82,7 @@ export function App() {
   const stageRef = useRef<Stage | null>(null);
   const [settings, setSettings] = useState<Settings>(INITIAL);
   const [coarse, setCoarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
-  const [panelOpen, setPanelOpen] = useState(() => !window.matchMedia('(max-width: 1099px)').matches);
+  const [panelOpen, setPanelOpen] = useState(false); // the stage first; the panel is one click away
   const [sound, setSound] = useState(false);
   const [hint, setHint] = useState(true);
   const [editor, setEditor] = useState<{ x: number; y: number } | null>(null);
@@ -368,6 +368,16 @@ export function App() {
           <i style={{ background: palette.ink }} /><i style={{ background: palette.flower }} /><i style={{ background: palette.spark }} />
         </button>
       </div>
+      {settings.material === 'elements' && (
+        <div className="corner tc2 el-switch glass" data-devour role="radiogroup" aria-label="Element">
+          {ELEMENTS.map((e) => (
+            <button key={e.id} type="button" role="radio" aria-checked={settings.element === e.id} title={e.label} onClick={() => patch({ element: e.id })}>
+              <ElementIcon id={e.id} />
+              <span>{e.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {quickOpen && <QuickControls settings={settings} onChange={patch} onClose={() => setQuickOpen(false)} />}
       {colorOpen && <ColorPop settings={settings} onChange={patch} onClose={() => setColorOpen(false)} />}
 

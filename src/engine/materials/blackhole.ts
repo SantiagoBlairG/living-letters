@@ -114,6 +114,8 @@ function strand(ctx: CanvasRenderingContext2D, l: Letter, f: Fall, fs: number, l
 let layer: HTMLCanvasElement | null = null;
 
 const holes: Hole[] = [];
+/** True while a hole is open: the stage hides its text caret then, which looks odd pulsing next to it. */
+export const holeActive = () => holes.length > 0;
 const falls = new Map<Letter, Fall>();
 
 const angleTo = (a: number, b: number, t: number) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;

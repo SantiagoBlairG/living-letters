@@ -8,6 +8,7 @@ import { Plants } from './plants';
 import { Sound } from './audio';
 import { CursorView } from './cursor';
 import { BEHAVIORS } from './materials';
+import { holeActive } from './materials/blackhole';
 import { renderScene } from './renderer';
 import { exportBlob } from './exporter';
 import { Backdrop } from './backdrop';
@@ -392,7 +393,8 @@ export class Stage implements World {
     this.fx.update(dt);
     this.colors.update(dt);
     this.cursor.update(dt, p, showCursor);
-    this.caretA += ((this.caretOn ? 1 : 0) - this.caretA) * (1 - Math.exp(-dt * 14));
+    const caret = this.caretOn && !(this.material === 'blackhole' && holeActive());
+    this.caretA += ((caret ? 1 : 0) - this.caretA) * (1 - Math.exp(-dt * 14));
     this.draw();
   };
 

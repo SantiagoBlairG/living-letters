@@ -87,6 +87,16 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .tc, .bc { left: 50%; transform: translateX(-50%); transition: left 0.42s var(--ease); }
 .tc { top: var(--edge); max-width: min(980px, calc(100% - 420px)); display: flex; align-items: center; gap: 8px; pointer-events: none; }
 .tc > * { flex: none; }
+/* the element switch, a small pill under the instructions (Elements only) */
+.tc2 { top: calc(var(--edge) + 46px); left: 50%; transform: translateX(-50%); transition: left 0.42s var(--ease); }
+.el-switch { display: flex; gap: 2px; padding: 3px; border-radius: 999px; animation: qc-in 0.25s var(--ease); }
+.el-switch button {
+  display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px 0 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: var(--dim); transition: background-color 0.2s, color 0.2s;
+}
+.el-switch button svg { width: 15px; height: 15px; }
+.el-switch button:hover { color: var(--ink); }
+.el-switch button[aria-checked='true'] { background: var(--ink); color: var(--bg); }
 .color-badge {
   pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
   height: 36px; padding: 0 11px; border-radius: 999px; cursor: pointer;
@@ -119,7 +129,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .bc .chip.solid, .bc .chip.rec { min-width: 132px; }
 .bc .chip { height: 42px; padding: 0 20px 0 15px; font-size: 14px; gap: 8px; }
 @media (min-width: 1100px) {
-  .app[data-panel='open'] :is(.tc, .bc, .quick-controls, .export) { left: calc((100% - 340px) / 2); }
+  .app[data-panel='open'] :is(.tc, .tc2, .bc, .quick-controls, .export) { left: calc((100% - 340px) / 2); }
   .app[data-panel='open'] :is(.hint, .empty) { right: 340px; }
 }
 .br { bottom: var(--edge); right: var(--edge); display: flex; gap: 8px; }
@@ -368,9 +378,21 @@ kbd {
 
 /* ---------- narrow screens: the panel becomes a bottom sheet ---------- */
 
+/* medium screens: the instructions no longer fit between the corners, so they take a row of their own */
+@media (min-width: 1100px) and (max-width: 1439px) {
+  .tc { max-width: calc(100% - 600px); flex-wrap: wrap; justify-content: center; row-gap: 8px; }
+  .tc .dock { order: 3; justify-content: center; }
+  .tc .color-badge { order: 2; }
+  .tc2 { top: calc(var(--edge) + 90px); }
+  .quick-controls { top: calc(var(--edge) + 90px); }
+}
+
 @media (max-width: 1099px) {
   :root { --edge: 14px; }
-  .app[data-panel='open'] :is(.tc, .bc, .hint) { opacity: 0; visibility: hidden; }
+  .app[data-panel='open'] :is(.tc, .tc2, .bc, .hint) { opacity: 0; visibility: hidden; }
+  .tc2 { top: 152px; }
+  .el-switch button span { display: none; }
+  .el-switch button { padding: 0 10px; }
   .tc, .bc { transition: opacity 0.25s ease, visibility 0s; }
   .only-wide { display: none !important; }
   .tl p { display: none; }

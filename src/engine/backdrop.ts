@@ -170,8 +170,8 @@ export class Backdrop {
     const imp: Impact = { x, y, dead: -1 };
     this.impacts.push(imp);
     const live = this.impacts.filter((i) => i.dead < 0);
-    if (live.length > 5) live[0].dead = this.t;
-    const R = rand(170, 330), n = 9 + Math.floor(rand(0, 4));
+    if (live.length > 3) live[0].dead = this.t;
+    const R = rand(130, 240), n = 5 + Math.floor(rand(0, 2)); // a light web: few, short rays
     const ang: number[] = [];
     for (let i = 0; i < n; i++) ang.push(((i + rand(-0.3, 0.3)) / n) * TAU);
     const rays: number[][] = [];
@@ -182,7 +182,7 @@ export class Backdrop {
         a += rand(-0.18, 0.18);
         cx += Math.cos(a) * (len / 6); cy += Math.sin(a) * (len / 6);
         pts.push(cx, cy);
-        if (s === 2 && Math.random() < 0.45) { // a branch
+        if (s === 2 && Math.random() < 0.2) { // a branch
           const b = a + (Math.random() < 0.5 ? -1 : 1) * rand(0.4, 0.8);
           this.cracks.push({ pts: [cx, cy, cx + Math.cos(b) * len * 0.25, cy + Math.sin(b) * len * 0.25], born: born + 0.12, imp });
         }
@@ -190,10 +190,10 @@ export class Backdrop {
       rays.push(pts);
       this.cracks.push({ pts, born: born + i * 0.015, imp });
     });
-    for (const f of [0.28, 0.52, 0.78]) { // the web's rings, chord by chord
+    for (const f of [0.45]) { // the web's rings, chord by chord
       for (let i = 0; i < n; i++) {
         const a = rays[i], b = rays[(i + 1) % n], j = Math.round(f * 6) * 2;
-        if (Math.random() < 0.2) continue;
+        if (Math.random() < 0.45) continue;
         this.cracks.push({ pts: [a[j], a[j + 1], b[j], b[j + 1]], born: born + 0.15 + f * 0.25, imp });
       }
     }
@@ -252,7 +252,7 @@ export class Backdrop {
         break;
       }
       case 'explode':
-        for (let i = 0; i < 2; i++) this.impact(rand(0.1, 0.9) * W, rand(0.15, 0.85) * H, -10);
+        for (let i = 0; i < 1; i++) this.impact(rand(0.1, 0.9) * W, rand(0.15, 0.85) * H, -10);
         for (let i = 0; i < 12; i++) this.dots.push(dot({ x: rand(0, W), y: rand(0, H), vx: rand(-8, 8), vy: rand(-8, 8), bx: rand(-8, 8), by: rand(-8, 8), s: rand(5, 13), vr: rand(-0.6, 0.6) }));
         break;
     }

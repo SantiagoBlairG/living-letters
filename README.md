@@ -20,7 +20,7 @@ Twenty materials, each with its own physics, cursor and sound:
 | Focus | depth of field: only what is near the pointer is sharp | racks the focus | zooms in, blurring outward |
 | Echo | letters smear, leaving tinted echoes | a strobe throws off copies | letters split into orbiting ghosts |
 | Ferrofluid | spikes rise from the edges toward the pointer | every edge bristles | the liquid is pulled toward the hand |
-| Glitch | letters tear into slipping bands, their colour channels pulling apart | the letters drop into coarse pixels and resolve | everything corrupts: jumps, flickers, breaks up |
+| Glitch | letters tear into bands that slip sideways, two palette colours pulling apart | a wave of interference rolls out along the word | everything corrupts: jumps, flickers, breaks up |
 | Kaleido | moves the centre of the mirrors | adds mirrors | turns the kaleidoscope |
 | Lava | glowing blobs inside the letters drift toward the pointer | heats the lamp: blobs swell and race up | stirs the blobs until their colours run together |
 | Mirage | heats the air: the word shimmers over its reflection | a heat wave rolls along the word | the letters blaze and rise |

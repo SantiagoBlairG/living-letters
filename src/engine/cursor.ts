@@ -197,8 +197,8 @@ export class CursorView {
     } else if (mat === 'glitch') {
       // a pixel, its channels slipping apart
       const j = (Math.sin(this.spin * 23) > 0.6 ? 3 : 0) + press * 3;
-      ctx.fillStyle = 'rgba(255,40,90,0.9)'; ctx.fillRect(-6 - j, -6, 10, 10);
-      ctx.fillStyle = 'rgba(40,225,255,0.9)'; ctx.fillRect(-4 + j, -4, 10, 10);
+      ctx.fillStyle = css(colors.flower, 0.9); ctx.fillRect(-6 - j, -6, 10, 10);
+      ctx.fillStyle = css(colors.stem, 0.9); ctx.fillRect(-4 + j, -4, 10, 10);
       ctx.fillStyle = css(colors.ink); ctx.fillRect(-5, -5, 10, 10);
     } else if (mat === 'echo') {
       // a dot with fading copies behind it

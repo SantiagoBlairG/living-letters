@@ -599,7 +599,7 @@ export class Backdrop {
           const y = near ? py + (hash(frame, i + 50) - 0.5) * 220 : hash(frame, i + 50) * H;
           const w2 = 20 + hash(frame, i + 100) * 160, h2 = 2 + hash(frame, i + 150) * 10;
           const k = hash(frame, i + 200);
-          ctx.fillStyle = k < 0.33 ? `rgba(255,40,90,${0.14 * a})` : k < 0.66 ? `rgba(40,225,255,${0.14 * a})` : css(c.ink, 0.1 * a);
+          ctx.fillStyle = k < 0.33 ? css(c.flower, 0.16 * a) : k < 0.66 ? css(c.stem, 0.16 * a) : css(c.ink, 0.1 * a);
           ctx.fillRect(x, y, w2, h2);
         }
         if (hash(frame, 999) < 0.15 + burst * 0.5) { // a tear across the screen

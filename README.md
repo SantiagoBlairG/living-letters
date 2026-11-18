@@ -20,9 +20,9 @@ Twenty materials, each with its own physics, cursor and sound:
 | Focus | depth of field: only what is near the pointer is sharp | racks the focus | zooms in, blurring outward |
 | Echo | letters smear, leaving tinted echoes | a strobe throws off copies | letters split into orbiting ghosts |
 | Ferrofluid | spikes rise from the edges toward the pointer | every edge bristles | the liquid is pulled toward the hand |
-| Ice | frost grows in branching crystals | freezes letters solid | melts the frost, which drips, and refreezes on release |
+| Ice | a white rime creeps through the letter from where you touch | freezes letters solid: icy, coated in a translucent shell, with glints and cracks | melts the ice, which drips, and refreezes on release |
 | Kaleido | moves the centre of the mirrors | adds mirrors | turns the kaleidoscope |
-| Origami | the half facing the pointer folds up | letters flap over, one after another | crumples the letters into facets |
+| Origami | letters are folded paper facets lit from the pointer; the folds deepen and the sheet lifts toward it | the sheets turn over one after another | crumples the letters |
 | Mirage | heats the air: the word shimmers over its reflection | a heat wave rolls along the word | the letters blaze and rise |
 | Bubble | bubbles wobble and drift away | pops a bubble into droplets | blows a stream of bubbles |
 | Gravity | the pointer is a ball that shoves letters | flips gravity (on a letter: kicks it) | pick a letter up and throw it |

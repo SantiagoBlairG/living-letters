@@ -45,10 +45,10 @@ export function drawBubble(ctx: CanvasRenderingContext2D, x: number, y: number, 
     rim = g;
   } else rim = `rgba(${IRIDESCENT[1]},${0.6 * alpha})`;
   ctx.strokeStyle = rim;
-  ctx.lineWidth = Math.max(1, r * 0.035);
+  ctx.lineWidth = Math.max(0.8, r * 0.016);
   ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
   ctx.strokeStyle = `rgba(255,255,255,${0.55 * alpha})`;
-  ctx.lineWidth = Math.max(1, r * 0.04);
+  ctx.lineWidth = Math.max(0.8, r * 0.022);
   ctx.lineCap = 'round';
   ctx.beginPath(); ctx.arc(x, y, r * 0.78, -2.65, -1.95); ctx.stroke();
   ctx.fillStyle = `rgba(255,255,255,${0.6 * alpha})`;

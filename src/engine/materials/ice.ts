@@ -1,35 +1,44 @@
 import type { Letter, Material, World } from '../types';
-import { calm, tuneF } from '../simulation';
+import { calm, toLocal, tuneF } from '../simulation';
 import { css, mix, type RGB } from '../color';
+import { blit, glyphLayer } from '../glyphLayer';
 
 /**
- * Cold. Near the pointer, frost grows out of the letters' edges in branching crystals. A click freezes the
- * letters it reaches solid — pale, stiff, rimed all over. Holding is warmth: the frost under the hand melts
- * and drips, and when you let go it freezes over again. Left alone, frost slowly sublimates away.
+ * Cold. Near the pointer, frost creeps through the letter from the side you touch — a white, grainy rime
+ * inside the ink. A click freezes the letters it reaches solid: icy white to pale blue, coated in a
+ * translucent shell, with glints and fine cracks inside. Holding is warmth: the ice melts and drips, and
+ * when you let go it freezes over again. Left alone, frost slowly fades.
  */
 
 const LIFT = 0.3;
-const ICE: RGB = [206, 236, 255];
+const ICE: RGB = [214, 238, 255];
+const DEEP: RGB = [120, 175, 230];
 
-interface Crystal { x: number; y: number; nx: number; ny: number; len: number; branches: number[]; a: number }
-interface State { crystals: Crystal[]; frozen: number; warm: number; refreeze: number; fs: number }
+interface State {
+  cover: number; // how much of the letter the frost has reached, 0..1
+  cx: number; cy: number; // where it spreads from, local px
+  frozen: number; // solid ice, 0..1
+  warm: number; refreeze: number;
+  grain: Float32Array; cracks: number[][]; fs: number;
+}
 interface Drop { x: number; y: number; vy: number; age: number }
 
 const states = new Map<Letter, State>();
 const drops: Drop[] = [];
 
 function build(w: World, l: Letter): State {
-  const e = l.glyph!.edges, n = e.length / 4, fs = w.fs;
-  const k = Math.min(30, n), step = n / k;
-  const crystals: Crystal[] = [];
-  for (let i = 0; i < k; i++) {
-    const j = Math.floor(i * step + Math.random() * step * 0.5) * 4;
-    const branches: number[] = [];
-    const nb = 2 + Math.floor(Math.random() * 3);
-    for (let b = 0; b < nb; b++) branches.push(0.25 + Math.random() * 0.6, (Math.random() < 0.5 ? -1 : 1) * (0.7 + Math.random() * 0.5));
-    crystals.push({ x: e[j] * fs - l.adv / 2, y: (e[j + 1] + LIFT) * fs, nx: e[j + 2], ny: e[j + 3], len: fs * (0.05 + Math.random() * 0.08), branches, a: 0 });
+  const g = l.glyph!.box, fs = w.fs;
+  const x0 = g[0] * fs - l.adv / 2, x1 = g[2] * fs - l.adv / 2, y0 = (g[1] + LIFT) * fs, y1 = (g[3] + LIFT) * fs;
+  const grain = new Float32Array(220 * 3);
+  for (let i = 0; i < 220; i++) { grain[i * 3] = x0 + Math.random() * (x1 - x0); grain[i * 3 + 1] = y0 + Math.random() * (y1 - y0); grain[i * 3 + 2] = Math.random(); }
+  const cracks: number[][] = [];
+  for (let i = 0; i < 4; i++) { // fine fractures running through the ice
+    let x = x0 + Math.random() * (x1 - x0), y = y0 + Math.random() * (y1 - y0), a = Math.random() * Math.PI * 2;
+    const pts = [x, y];
+    for (let s = 0; s < 4; s++) { a += (Math.random() - 0.5) * 1.2; x += Math.cos(a) * fs * 0.08; y += Math.sin(a) * fs * 0.08; pts.push(x, y); }
+    cracks.push(pts);
   }
-  return { crystals, frozen: 0, warm: 0, refreeze: 0, fs };
+  return { cover: 0, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, frozen: 0, warm: 0, refreeze: 0, grain, cracks, fs };
 }
 
 function state(w: World, l: Letter) {
@@ -37,9 +46,6 @@ function state(w: World, l: Letter) {
   if (!s || s.fs !== w.fs) { s = build(w, l); states.set(l, s); }
   return s;
 }
-
-/** A point on the letter, in stage px. */
-const toStage = (l: Letter, x: number, y: number) => [l.m[0] * x + l.m[2] * y + l.m[4], l.m[1] * x + l.m[3] * y + l.m[5]];
 
 export const ice: Material = {
   id: 'ice',
@@ -57,31 +63,41 @@ export const ice: Material = {
 
   update(w: World, dt) {
     const p = w.p, fs = w.fs;
-    const grow = 1.4 * w.inten * tuneF(w.tune, 3);
-    const R = fs * 0.7;
+    const grow = 0.9 * w.inten * tuneF(w.tune, 3);
     for (const k of states.keys()) if (!w.letters.includes(k)) states.delete(k);
     for (const l of w.letters) {
       if (!l.glyph) continue;
       const s = state(w, l);
-      const near = p.active ? Math.hypot(w.cx(l) - p.x, w.cy(l) - p.y) < fs * 1.4 : false;
-      const warming = p.down && near;
+      const d = p.active ? Math.hypot(w.cx(l) - p.x, w.cy(l) - p.y) : Infinity;
+      const near = d < fs * 0.8;
+      const warming = p.down && d < fs * 1.2;
       s.warm += ((warming ? 1 : 0) - s.warm) * Math.min(1, dt * (warming ? 3 : 1.5));
-      if (warming) s.refreeze = 1; // once warmed, it freezes over again when you let go
-      for (const c of s.crystals) {
-        const [cx, cy] = toStage(l, c.x, c.y);
-        const d = p.active ? Math.hypot(cx - p.x, cy - p.y) : Infinity;
-        if (warming && d < R * 1.3) c.a = Math.max(0, c.a - dt * 2.2); // melts under the hand
-        else if (!p.down && d < R) c.a = Math.min(1, c.a + dt * grow * (1 - d / R)); // frost reaches for the hand
-        else if (s.refreeze > 0 && !p.down) c.a = Math.min(1, c.a + dt * 0.9 * s.refreeze);
-        else c.a = Math.max(s.frozen * 0.9, c.a - dt * 0.07); // sublimates, slowly
-        // melting frost drips
-        if (warming && c.a > 0.05 && Math.random() < dt * 4 && drops.length < 160) drops.push({ x: cx, y: cy, vy: fs * 0.2, age: 0 });
+      if (warming) {
+        s.refreeze = 1;
+        s.cover = Math.max(0, s.cover - dt * 1.4);
+        s.frozen = Math.max(0, s.frozen - dt * 1.1);
+        // meltwater runs off the bottom of the letter
+        if ((s.cover > 0.05 || s.frozen > 0.05) && Math.random() < dt * 10 && drops.length < 160) {
+          const e = l.glyph.edges, i = Math.floor(Math.random() * (e.length / 4)) * 4;
+          if (e[i + 3] > 0.3) {
+            const lx = e[i] * fs - l.adv / 2, ly = (e[i + 1] + LIFT) * fs;
+            drops.push({ x: l.m[0] * lx + l.m[2] * ly + l.m[4], y: l.m[1] * lx + l.m[3] * ly + l.m[5], vy: fs * 0.1, age: 0 });
+          }
+        }
+      } else if (near && !p.down) {
+        // the frost creeps in from where the hand is
+        if (s.cover < 0.05) { const [lx, ly] = toLocal(l, p.x, p.y); s.cx = lx; s.cy = ly; }
+        s.cover = Math.min(1, s.cover + dt * grow * (1 - d / (fs * 0.8)));
+      } else if (s.refreeze > 0 && !p.down) {
+        s.cover = Math.min(1, s.cover + dt * 0.8 * s.refreeze);
+        s.frozen = Math.min(1, s.frozen + dt * 0.5 * s.refreeze);
+        s.refreeze = Math.max(0, s.refreeze - dt * 0.5);
+      } else {
+        s.cover = Math.max(s.frozen, s.cover - dt * 0.05); // frost fades slowly; ice stays a while
+        s.frozen = Math.max(0, s.frozen - dt * 0.03);
       }
-      if (!p.down) s.refreeze = Math.max(0, s.refreeze - dt * 0.6);
-      s.frozen = Math.max(0, s.frozen - dt * (warming ? 1.2 : 0.06));
-      // a frozen letter is stiff and pale; a warm one sags a little
-      l.kMul *= 1 + s.frozen * 2;
-      l.syT -= s.warm * 0.05; l.ty += s.warm * fs * 0.03;
+      l.kMul *= 1 + s.frozen * 2.5; // ice is stiff
+      l.syT -= s.warm * 0.04; l.ty += s.warm * fs * 0.025;
       if (s.warm > 0.3 && Math.random() < dt * 2) w.sound.play('drip', 0.2);
     }
     for (let i = drops.length - 1; i >= 0; i--) {
@@ -95,16 +111,13 @@ export const ice: Material = {
 
   up(w, _hit, click) {
     if (!click) return;
-    // a click freezes the letters it reaches solid
     const p = w.p, fs = w.fs, R = fs * 1.2;
     let any = false;
     for (const l of w.letters) {
       if (!l.glyph) continue;
-      const d = Math.hypot(w.cx(l) - p.x, w.cy(l) - p.y);
-      if (d > R) continue;
+      if (Math.hypot(w.cx(l) - p.x, w.cy(l) - p.y) > R) continue;
       const s = state(w, l);
-      s.frozen = 1;
-      for (const c of s.crystals) c.a = 1;
+      s.frozen = 1; s.cover = 1;
       l.vsx += 0.8; l.vsy -= 0.8; // a shiver as it seizes
       any = true;
     }
@@ -114,40 +127,61 @@ export const ice: Material = {
 
   drawLetter(ctx, l, w, colors, liftPx) {
     const s = states.get(l);
-    if (!s) return false;
-    const fs = w.fs;
-    const icy = mix(colors.ink, ICE, 0.25 + 0.25 * colors.ink[0] / 255);
-    if (s.frozen > 0.01) ctx.fillStyle = css(mix(colors.ink, icy, s.frozen * 0.8));
-    ctx.fillText(l.ch, -l.adv / 2, liftPx);
-    // the frost: a main needle along the edge's normal, with side branches, drawn as far as it has grown
-    const frost = css(mix(icy, [255, 255, 255], 0.4), 0.85);
-    ctx.strokeStyle = frost;
-    ctx.lineCap = 'round';
-    ctx.lineWidth = Math.max(0.8, fs * 0.006);
-    const dy = liftPx - LIFT * fs;
-    ctx.beginPath();
-    for (const c of s.crystals) {
-      if (c.a < 0.03) continue;
-      const L = c.len * c.a, x = c.x, y = c.y + dy, nx = c.nx, ny = c.ny;
-      ctx.moveTo(x, y); ctx.lineTo(x + nx * L, y + ny * L);
-      for (let b = 0; b < c.branches.length; b += 2) {
-        const at = c.branches[b] * L, side = c.branches[b + 1];
-        const bx = x + nx * at, by = y + ny * at;
-        const ang = Math.atan2(ny, nx) + side * 0.95, bl = (L - at) * 0.55;
-        ctx.moveTo(bx, by); ctx.lineTo(bx + Math.cos(ang) * bl, by + Math.sin(ang) * bl);
-      }
+    if (!s || (s.cover < 0.02 && s.frozen < 0.02)) return false;
+    const fs = w.fs, f = s.frozen, dy = liftPx - LIFT * fs;
+    // the ice coating: a translucent shell just outside the letter
+    if (f > 0.03) {
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = css(mix(ICE, colors.bg, 0.15), 0.32 * f);
+      ctx.lineWidth = fs * 0.045;
+      ctx.strokeText(l.ch, -l.adv / 2, liftPx);
+      ctx.strokeStyle = `rgba(255,255,255,${(0.35 * f).toFixed(3)})`;
+      ctx.lineWidth = Math.max(1, fs * 0.006);
+      ctx.strokeText(l.ch, -l.adv / 2, liftPx);
+      ctx.restore();
     }
-    ctx.stroke();
-    if (s.frozen > 0.05) { // a glint of ice across a frozen letter
-      const g = l.glyph!.box;
-      const top = g[1] * fs + liftPx, bot = g[3] * fs + liftPx;
-      const gl = ctx.createLinearGradient(-l.adv / 2, top, l.adv / 2, bot);
-      gl.addColorStop(0.3, 'rgba(255,255,255,0)');
-      gl.addColorStop(0.45, `rgba(255,255,255,${0.35 * s.frozen})`);
-      gl.addColorStop(0.6, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gl;
-      ctx.fillText(l.ch, -l.adv / 2, liftPx);
+    const L = glyphLayer(ctx, l, liftPx, fs);
+    if (!L) return false;
+    const g = L.g;
+    g.globalCompositeOperation = 'source-atop';
+    const y0 = L.y0, y1 = L.y1;
+    if (f > 0.01) { // solid ice: icy white to a cold blue, deeper toward the bottom
+      const body = g.createLinearGradient(0, y0, 0, y1);
+      body.addColorStop(0, css(mix(colors.ink, [255, 255, 255], 0.6), f));
+      body.addColorStop(0.55, css(ICE, f));
+      body.addColorStop(1, css(DEEP, f * 0.95));
+      g.fillStyle = body; g.fillRect(L.x0, y0, L.x1 - L.x0, y1 - y0);
     }
+    // the rime: white and grainy, spreading from where the frost began
+    const R = Math.hypot(L.x1 - L.x0, y1 - y0) * (0.15 + s.cover * 1.1);
+    const rime = g.createRadialGradient(s.cx, s.cy + dy, 0, s.cx, s.cy + dy, R);
+    rime.addColorStop(0, `rgba(240,250,255,${(0.75 * s.cover).toFixed(3)})`);
+    rime.addColorStop(0.7, `rgba(225,242,255,${(0.45 * s.cover).toFixed(3)})`);
+    rime.addColorStop(1, 'rgba(225,242,255,0)');
+    g.fillStyle = rime; g.fillRect(L.x0, y0, L.x1 - L.x0, y1 - y0);
+    g.fillStyle = 'rgba(255,255,255,0.8)';
+    for (let i = 0; i < s.grain.length; i += 3) {
+      const gx = s.grain[i], gy = s.grain[i + 1] + dy;
+      if (Math.hypot(gx - s.cx, gy - s.cy - dy) > R * 0.85 && f < 0.5) continue;
+      const r = fs * (0.004 + 0.006 * s.grain[i + 2]);
+      g.globalAlpha = Math.max(s.cover, f) * (0.3 + 0.5 * s.grain[i + 2]);
+      g.fillRect(gx - r, gy - r, r * 2, r * 2);
+    }
+    g.globalAlpha = 1;
+    if (f > 0.05) { // glints across the surface and fine cracks inside
+      const gl = g.createLinearGradient(L.x0, y0, L.x1, y1);
+      gl.addColorStop(0.25, 'rgba(255,255,255,0)'); gl.addColorStop(0.36, `rgba(255,255,255,${(0.55 * f).toFixed(3)})`);
+      gl.addColorStop(0.42, 'rgba(255,255,255,0)'); gl.addColorStop(0.6, 'rgba(255,255,255,0)');
+      gl.addColorStop(0.64, `rgba(255,255,255,${(0.3 * f).toFixed(3)})`); gl.addColorStop(0.68, 'rgba(255,255,255,0)');
+      g.fillStyle = gl; g.fillRect(L.x0, y0, L.x1 - L.x0, y1 - y0);
+      g.strokeStyle = `rgba(255,255,255,${(0.5 * f).toFixed(3)})`;
+      g.lineWidth = Math.max(0.6, fs * 0.004);
+      g.beginPath();
+      for (const c of s.cracks) { g.moveTo(c[0], c[1] + dy); for (let i = 2; i < c.length; i += 2) g.lineTo(c[i], c[i + 1] + dy); }
+      g.stroke();
+    }
+    blit(ctx, L);
     return true;
   },
 

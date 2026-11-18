@@ -2,6 +2,7 @@ import type { Letter, Material, World } from '../types';
 import { calm, clamp, tuneF } from '../simulation';
 import { css } from '../color';
 import { fontOf } from '../layout';
+import { glyphLayer } from '../glyphLayer';
 
 /**
  * A mirage. The word shimmers like air over hot ground, with its reflection lying inverted below it. Near the
@@ -10,7 +11,6 @@ import { fontOf } from '../layout';
  */
 
 const LIFT = 0.3;
-const SLICES = 40;
 
 interface Wave { x: number; t0: number }
 const heat = new Map<Letter, number>();
@@ -18,23 +18,28 @@ const waves: Wave[] = [];
 let clock = 0;
 let holdHeat = 0;
 
-/** Horizontal slices of the glyph, each pushed sideways by the shimmer. `alphaAt(v)` fades slices (0 top … 1 bottom). */
+const ROW = 2; // device pixels per row: thin enough that the wave reads as one continuous curve
+
+/**
+ * The glyph rendered once at screen resolution, then laid back row by row, each row pushed sideways by the
+ * shimmer — so the wave bends smoothly instead of in steps. `alphaAt(v)` fades rows (0 top … 1 bottom).
+ */
 function shimmer(ctx: CanvasRenderingContext2D, l: Letter, fs: number, liftPx: number, amp: number, alphaAt?: (v: number) => number) {
-  const g = l.glyph!.box;
-  const y0 = g[1] * fs + liftPx - fs * 0.02, y1 = g[3] * fs + liftPx + fs * 0.02;
-  const h = (y1 - y0) / SLICES, k = (Math.PI * 2) / (fs * 0.42);
-  const a0 = ctx.globalAlpha;
-  for (let i = 0; i < SLICES; i++) {
-    const a = y0 + i * h, v = (i + 0.5) / SLICES;
+  if (amp < 0.15 && !alphaAt) { ctx.fillText(l.ch, -l.adv / 2, liftPx); return; }
+  const L = glyphLayer(ctx, l, liftPx, fs, 0.03);
+  if (!L) return;
+  const k = (Math.PI * 2) / (fs * 0.42), a0 = ctx.globalAlpha;
+  const w = L.W / L.kx, rows = Math.ceil(L.H / ROW);
+  for (let i = 0; i < rows; i++) {
+    const sy = i * ROW, y = L.y0 + sy / L.ky, v = (i + 0.5) / rows;
     const al = alphaAt ? alphaAt(v) : 1;
     if (al < 0.01) continue;
-    const dx = amp * Math.sin(a * k - clock * 5 + l.phase) + amp * 0.25 * Math.sin(a * k * 1.7 + clock * 3);
-    ctx.save();
+    const dx = amp * Math.sin(y * k - clock * 5 + l.phase) + amp * 0.25 * Math.sin(y * k * 1.7 + clock * 3);
     ctx.globalAlpha = a0 * al;
-    ctx.beginPath(); ctx.rect(-l.adv - fs, a - 0.4, l.adv * 2 + fs * 2, h + 0.8); ctx.clip();
-    ctx.fillText(l.ch, -l.adv / 2 + dx, liftPx);
-    ctx.restore();
+    // a hair taller than a row, so neighbouring rows meet without seams
+    ctx.drawImage(L.c, 0, sy, L.W, Math.min(ROW + 1, L.H - sy), L.x0 + dx, y, w, (ROW + 1) / L.ky);
   }
+  ctx.globalAlpha = a0;
 }
 
 function ampOf(w: World, l: Letter) {

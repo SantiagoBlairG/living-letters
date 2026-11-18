@@ -112,9 +112,9 @@ export class Backdrop {
       }
     } else if (k === 'explode') {
       this.impact(x, y, this.t);
-      for (let i = 0; i < 9; i++) {
-        const a = rand(0, TAU), sp = rand(120, 320);
-        this.bit({ k: SHARD, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, s: rand(4, 10), vr: rand(-8, 8), max: rand(1, 1.8) });
+      for (let i = 0; i < 6; i++) {
+        const a = rand(0, TAU), sp = rand(90, 220);
+        this.bit({ k: SHARD, x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, s: rand(2.5, 6), vr: rand(-8, 8), max: rand(1, 1.8) });
       }
     } else if (k === 'el-fire') {
       for (let i = 0; i < 34; i++) {
@@ -172,7 +172,7 @@ export class Backdrop {
     this.impacts.push(imp);
     const live = this.impacts.filter((i) => i.dead < 0);
     if (live.length > 3) live[0].dead = this.t;
-    const R = rand(130, 240), n = 5 + Math.floor(rand(0, 2)); // a light web: few, short rays
+    const R = rand(70, 130), n = 5 + Math.floor(rand(0, 2)); // a light web: few, short rays
     const ang: number[] = [];
     for (let i = 0; i < n; i++) ang.push(((i + rand(-0.3, 0.3)) / n) * TAU);
     const rays: number[][] = [];
@@ -254,7 +254,7 @@ export class Backdrop {
       }
       case 'explode':
         for (let i = 0; i < 1; i++) this.impact(rand(0.1, 0.9) * W, rand(0.15, 0.85) * H, -10);
-        for (let i = 0; i < 12; i++) this.dots.push(dot({ x: rand(0, W), y: rand(0, H), vx: rand(-8, 8), vy: rand(-8, 8), bx: rand(-8, 8), by: rand(-8, 8), s: rand(5, 13), vr: rand(-0.6, 0.6) }));
+        for (let i = 0; i < 8; i++) this.dots.push(dot({ x: rand(0, W), y: rand(0, H), vx: rand(-8, 8), vy: rand(-8, 8), bx: rand(-8, 8), by: rand(-8, 8), s: rand(3, 7), vr: rand(-0.6, 0.6) }));
         break;
     }
   }
@@ -851,9 +851,9 @@ export class Backdrop {
               if (pa > 0.05 && Math.hypot((ax + bx) / 2 - px, (ay + by) / 2 - py) < glint) { lit.moveTo(ax, ay); lit.lineTo(bx, by); }
             }
           }
-          ctx.strokeStyle = css(c.ink, 0.07 * a * fadeOut); ctx.lineWidth = 0.8;
+          ctx.strokeStyle = css(c.ink, 0.05 * a * fadeOut); ctx.lineWidth = 0.7;
           ctx.stroke(path);
-          if (pa > 0.05) { ctx.strokeStyle = css(c.spark, 0.22 * pa * a * fadeOut); ctx.lineWidth = 1; ctx.stroke(lit); }
+          if (pa > 0.05) { ctx.strokeStyle = css(c.spark, 0.15 * pa * a * fadeOut); ctx.lineWidth = 0.8; ctx.stroke(lit); }
         }
         for (const d of this.dots) { // floating shards that catch the light as they turn
           const shine = Math.max(0, Math.cos(d.rot * 2));
@@ -864,8 +864,8 @@ export class Backdrop {
             if (i === 0) ctx.moveTo(d.x + Math.cos(an) * r, d.y + Math.sin(an) * r); else ctx.lineTo(d.x + Math.cos(an) * r, d.y + Math.sin(an) * r);
           }
           ctx.closePath();
-          ctx.fillStyle = css(c.ink, (0.03 + 0.05 * shine + 0.06 * near) * a); ctx.fill();
-          ctx.strokeStyle = css(c.spark, (0.05 + 0.15 * shine * (0.4 + near)) * a); ctx.lineWidth = 0.8; ctx.stroke();
+          ctx.fillStyle = css(c.ink, (0.025 + 0.04 * shine + 0.04 * near) * a); ctx.fill();
+          ctx.strokeStyle = css(c.spark, (0.04 + 0.1 * shine * (0.4 + near)) * a); ctx.lineWidth = 0.7; ctx.stroke();
         }
         break;
       }
@@ -880,7 +880,7 @@ export class Backdrop {
         if (b.k === PETAL) { ctx.beginPath(); ctx.ellipse(b.x, b.y, b.s, b.s * 0.5, b.rot, 0, TAU); ctx.fill(); }
         else { ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.rot); ctx.fillRect(-b.s, -b.s * 0.4, b.s * 2, b.s * 0.8); ctx.restore(); }
       } else if (b.k === SHARD) {
-        ctx.fillStyle = css(c.ink, 0.1 * life * a); ctx.strokeStyle = css(c.spark, 0.22 * life * a);
+        ctx.fillStyle = css(c.ink, 0.07 * life * a); ctx.strokeStyle = css(c.spark, 0.15 * life * a);
         ctx.beginPath();
         for (let i = 0; i < 3; i++) { const an = b.rot + (i * TAU) / 3; if (i === 0) ctx.moveTo(b.x + Math.cos(an) * b.s, b.y + Math.sin(an) * b.s); else ctx.lineTo(b.x + Math.cos(an) * b.s, b.y + Math.sin(an) * b.s); }
         ctx.closePath(); ctx.fill(); ctx.stroke();

@@ -4,7 +4,7 @@ import { mixHex } from './color';
 export const SERIF = '"Gloock", "Bodoni 72", "Didot", "Playfair Display", Georgia, "Times New Roman", serif';
 export const MONO = '"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
 
-export const MAX_CHARS = 14;
+export const MAX_CHARS = 25;
 
 /** Typefaces for the word. Each is bundled locally; see licenses/. */
 export const FONTS = [

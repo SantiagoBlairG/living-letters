@@ -41,7 +41,7 @@ export function layoutWord(word: string, W: number, H: number, mobile: boolean, 
   const total = chars.length ? ctx.measureText(word).width : 0;
   const byWidth = total > 0 ? (frac * Wa) / (total / REF) : Infinity;
   const byHeight = hFrac * H;
-  const fs = Math.max(36, Math.min(byWidth, byHeight));
+  const fs = Math.max(16, Math.min(byWidth, byHeight)); // small enough that a long phrase still fits a phone
   const s = fs / REF;
 
   // Centre the ink of this particular word, not the font's line box.

@@ -152,6 +152,38 @@ export class CursorView {
         ctx.fillStyle = css(colors.stem);
         ctx.beginPath(); ctx.moveTo(0, -7); ctx.bezierCurveTo(4, -2, 5, 1, 5, 3); ctx.arc(0, 3, 5, 0, Math.PI); ctx.bezierCurveTo(-5, 1, -4, -2, 0, -7); ctx.fill();
       }
+    } else if (mat === 'kaleido') {
+      ctx.rotate(this.spin * 0.4);
+      ctx.strokeStyle = css(colors.spark); ctx.lineWidth = 1.5;
+      const r = 9 + press * 3;
+      ctx.beginPath();
+      for (let i = 0; i <= 6; i++) { const a = (i * Math.PI) / 3; if (i) ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); else ctx.moveTo(r, 0); }
+      for (let i = 0; i < 3; i++) { const a = (i * Math.PI) / 3; ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r); ctx.lineTo(-Math.cos(a) * r, -Math.sin(a) * r); }
+      ctx.stroke();
+    } else if (mat === 'origami') {
+      // a paper plane, pointing the way the hand moves
+      ctx.rotate(Math.atan2(this.vy, this.vx || 0.001) * Math.min(1, speed / 200));
+      const k = 1 - press * 0.25;
+      ctx.fillStyle = css(colors.ink);
+      ctx.beginPath(); ctx.moveTo(12 * k, 0); ctx.lineTo(-9 * k, -8 * k); ctx.lineTo(-4 * k, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = css(colors.ink, 0.6);
+      ctx.beginPath(); ctx.moveTo(12 * k, 0); ctx.lineTo(-9 * k, 8 * k); ctx.lineTo(-4 * k, 0); ctx.closePath(); ctx.fill();
+    } else if (mat === 'mirage') {
+      ctx.strokeStyle = css(colors.flower); ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let j = -1; j <= 1; j++) {
+        for (let x = -10; x <= 10; x += 2) {
+          const y = j * 6 + Math.sin(x * 0.45 + this.spin * 3 + j) * (2 + press * 2);
+          if (x === -10) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+    } else if (mat === 'bubble') {
+      const r = 9 + press * 4;
+      ctx.strokeStyle = css(colors.stem); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, 6.2832); ctx.stroke();
+      ctx.strokeStyle = css(colors.ink, 0.7);
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.7, -2.6, -1.9); ctx.stroke();
     } else if (mat === 'ferro') {
       // a drop of ferrofluid with spikes turning slowly
       ctx.fillStyle = css(colors.ink);

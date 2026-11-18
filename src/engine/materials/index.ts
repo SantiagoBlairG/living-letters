@@ -15,5 +15,9 @@ import { focus } from './focus';
 import { echo } from './echo';
 import { ferro } from './ferro';
 import { ice } from './ice';
+import { kaleido } from './kaleido';
+import { origami } from './origami';
+import { mirage } from './mirage';
+import { bubble } from './bubble';
 
-export const BEHAVIORS: Record<MaterialId, Material> = { jelly, magnet, bloom, float, gravity, balloon, wave, explode, sand, melt, blackhole, elements, focus, echo, ferro, ice };
+export const BEHAVIORS: Record<MaterialId, Material> = { jelly, magnet, bloom, float, gravity, balloon, wave, explode, sand, melt, blackhole, elements, focus, echo, ferro, ice, kaleido, origami, mirage, bubble };

@@ -1,6 +1,8 @@
 import type { Stage } from './stage';
 import type { ColorKey } from './types';
 import { css, mix, type RGB } from './color';
+import { kaleidoState } from './materials/kaleido';
+import { drawBubble } from './materials/bubble';
 
 /**
  * The atmosphere behind the word: a faint background in the spirit of the current material. It answers the
@@ -70,6 +72,8 @@ export class Backdrop {
   private stems: Stem[] = [];
   private trails: number[][] = []; // echo: light trails, the last one is the pointer's
   private frost: number[][] = []; // ice: crystals grown in from the corners
+  private tris: { pts: number[]; n: number; s: number }[] = []; // origami: a sheet of folded paper
+  private horizon = 0; // mirage
   private impacts: Impact[] = [];
   private cracks: Crack[] = [];
   private ripples: Ripple[] = [];
@@ -86,7 +90,13 @@ export class Backdrop {
     this.shocks.push({ x, y, born: this.t });
     if (this.shocks.length > 6) this.shocks.shift();
     const k = this.kind;
-    if (k === 'balloon') {
+    if (k === 'bubble') { // pop the background bubbles near the click
+      for (const b of this.dots) {
+        if (Math.hypot(b.x - x, b.y - y) > 140) continue;
+        for (let i = 0; i < 8; i++) { const a = rand(0, TAU), sp = rand(60, 180); this.bit({ k: SPLASH, x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, s: rand(1, 2.2), max: 0.9 }); }
+        b.y = this.H + b.s * 2 + rand(0, 60); b.x = rand(0, this.W);
+      }
+    } else if (k === 'balloon') {
       let popped = 0;
       for (const b of this.dots) {
         if (Math.hypot(b.x - x, b.y - y) > 130) continue;
@@ -196,7 +206,7 @@ export class Backdrop {
 
   private reseed() {
     const { W, H } = this;
-    this.dots = []; this.bits = []; this.stems = []; this.trails = []; this.frost = []; this.impacts = []; this.cracks = []; this.ripples = [];
+    this.dots = []; this.bits = []; this.stems = []; this.trails = []; this.frost = []; this.tris = []; this.impacts = []; this.cracks = []; this.ripples = [];
     const spec = DRIFT[this.kind];
     if (spec) {
       for (let i = 0; i < spec.n; i++) {
@@ -205,6 +215,20 @@ export class Backdrop {
       }
     }
     switch (this.kind) {
+      case 'origami': { // a large sheet folded into facets
+        const cols = 9, rows = 6, gx = W / cols, gy = H / rows, P: number[][] = [];
+        for (let j = 0; j <= rows; j++) { P.push([]); for (let i = 0; i <= cols; i++) { const edge = i === 0 || j === 0 || i === cols || j === rows; P[j].push(i * gx + (edge ? 0 : rand(-0.3, 0.3) * gx), j * gy + (edge ? 0 : rand(-0.3, 0.3) * gy)); } }
+        for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+          const a = [P[j][i * 2], P[j][i * 2 + 1]], b = [P[j][i * 2 + 2], P[j][i * 2 + 3]], c2 = [P[j + 1][i * 2], P[j + 1][i * 2 + 1]], d = [P[j + 1][i * 2 + 2], P[j + 1][i * 2 + 3]];
+          const flip = Math.random() < 0.5;
+          this.tris.push({ pts: flip ? [...a, ...b, ...d] : [...a, ...b, ...c2], n: rand(0, TAU), s: rand(0, 1) });
+          this.tris.push({ pts: flip ? [...a, ...d, ...c2] : [...b, ...d, ...c2], n: rand(0, TAU), s: rand(0, 1) });
+        }
+        break;
+      }
+      case 'bubble':
+        for (let i = 0; i < 22; i++) { const v = rand(-30, -10); this.dots.push(dot({ x: rand(0, W), y: rand(0, H * 1.2), vy: v, by: v, s: rand(8, 34) })); }
+        break;
       case 'focus': // bokeh: soft discs of out-of-focus light
         for (let i = 0; i < 26; i++) { const vx = rand(-6, 6), vy = rand(-6, 6); this.dots.push(dot({ x: rand(0, W), y: rand(0, H), vx, vy, bx: vx, by: vy, s: rand(14, 46), c: i })); }
         break;
@@ -305,6 +329,18 @@ export class Backdrop {
     }
 
     switch (kind) {
+      case 'mirage': this.horizon = st.baseline + st.fs * 0.04; break;
+      case 'bubble':
+        for (const b of this.dots) { // rising bubbles, nudged aside by the hand, blown by clicks
+          b.vy += (b.by - b.vy) * Math.min(1, dt); b.vx *= 1 - Math.min(1, dt * 1.2);
+          if (pa > 0.05) { const dx = b.x - px, dy = b.y - py, r = Math.hypot(dx, dy) || 1; if (r < 150) { const f = (1 - r / 150) * pa; b.vx += (dx / r) * 600 * f * dt; b.vy += (dy / r) * 400 * f * dt; } }
+          const sh = this.shockAt(b.x, b.y);
+          b.vx += sh.fx * 1600 * dt; b.vy += sh.fy * 1600 * dt;
+          b.x += (b.vx + Math.sin(this.t * 0.8 + b.ph) * 14) * dt; b.y += b.vy * dt;
+          if (b.y < -b.s * 2) { b.y = H + b.s * 2; b.x = rand(0, W); }
+          if (b.x < -40) b.x += W + 80; else if (b.x > W + 40) b.x -= W + 80;
+        }
+        break;
       case 'focus':
         for (const d of this.dots) {
           const sh = this.shockAt(d.x, d.y);
@@ -531,6 +567,67 @@ export class Backdrop {
     }
 
     switch (k) {
+      case 'kaleido': {
+        // a rosette with the kaleidoscope's own symmetry, turning with it, centred where its mirrors meet
+        const ks = kaleidoState, n = ks.n, cx = ks.cx, cy = ks.cy, R = Math.hypot(W, H) * 0.55;
+        const fl = ks.flash;
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(ks.rot);
+        ctx.strokeStyle = css(c.stem, (0.08 + 0.1 * fl) * a); ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) { const an = (i * TAU) / n; ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * R, Math.sin(an) * R); }
+        ctx.stroke();
+        const cols: ColorKey[] = ['spark', 'flower', 'stem'];
+        [90, 180, 290, 420].forEach((r0, j) => {
+          const r = r0 * (1 + fl * 0.25), off = (j % 2 ? -1 : 1) * t * 0.15 + j * 0.4;
+          ctx.strokeStyle = css(c[cols[j % 3]], (0.1 + 0.12 * fl) * a); ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          for (let i = 0; i <= n; i++) { const an = (i * TAU) / n + off; const X = Math.cos(an) * r, Y = Math.sin(an) * r; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); }
+          ctx.stroke();
+          ctx.fillStyle = css(c[cols[(j + 1) % 3]], (0.18 + 0.2 * fl) * a);
+          for (let i = 0; i < n; i++) { const an = (i * TAU) / n + off; ctx.beginPath(); ctx.arc(Math.cos(an) * r, Math.sin(an) * r, 2.2, 0, TAU); ctx.fill(); }
+        });
+        ctx.restore();
+        break;
+      }
+      case 'origami': {
+        // folded paper, its facets catching a light that sits where the hand is
+        const lx = pa > 0.05 ? px : W * (0.5 + 0.3 * Math.cos(t * 0.2)), ly = pa > 0.05 ? py : H * 0.3;
+        for (const tr of this.tris) {
+          const q = tr.pts, mx = (q[0] + q[2] + q[4]) / 3, my = (q[1] + q[3] + q[5]) / 3;
+          const toLight = Math.atan2(ly - my, lx - mx), lit = Math.cos(tr.n - toLight);
+          const near = Math.max(0, 1 - Math.hypot(lx - mx, ly - my) / Math.max(W, H));
+          const sh = this.shockAt(mx, my).w;
+          ctx.fillStyle = lit > 0 ? css(c.ink, (0.015 + 0.06 * lit * near + 0.08 * sh) * a) : css(c.bg, Math.min(0.6, (0.2 * -lit + 0.05) * a));
+          ctx.beginPath(); ctx.moveTo(q[0], q[1]); ctx.lineTo(q[2], q[3]); ctx.lineTo(q[4], q[5]); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = css(c.ink, 0.045 * a); ctx.lineWidth = 1; ctx.stroke();
+        }
+        break;
+      }
+      case 'mirage': {
+        // a warm haze along the horizon, with the air shimmering above it
+        const hy = this.horizon;
+        const g = ctx.createLinearGradient(0, hy - 180, 0, hy + 60);
+        g.addColorStop(0, css(c.flower, 0)); g.addColorStop(0.75, css(c.flower, 0.12 * a)); g.addColorStop(1, css(c.flower, 0));
+        ctx.fillStyle = g; ctx.fillRect(0, hy - 180, W, 240);
+        ctx.strokeStyle = css(c.flower, 0.12 * a); ctx.lineWidth = 1.2;
+        for (let i = 0; i < 9; i++) {
+          const y0 = hy - 14 - i * 22;
+          ctx.beginPath();
+          for (let x = -10; x <= W + 10; x += 12) {
+            const near = pa > 0.05 ? Math.exp(-((x - px) ** 2 + (y0 - py) ** 2) / (2 * 160 * 160)) * pa : 0;
+            const sh = this.shockAt(x, y0).w;
+            const y = y0 + Math.sin(x * 0.035 + t * (2.5 + i * 0.3) + i) * (1.5 + i * 0.5 + near * 9 + sh * 14);
+            if (x === -10) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+        ctx.strokeStyle = css(c.ink, 0.12 * a);
+        ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(W, hy); ctx.stroke();
+        break;
+      }
+      case 'bubble':
+        for (const b of this.dots) drawBubble(ctx, b.x, b.y, b.s, t + b.ph, 0.5 * a);
+        break;
       case 'focus': {
         // bokeh discs: wide and faint far from the hand, smaller and sharper near it, as if it were the focus
         const cols: ColorKey[] = ['spark', 'flower', 'stem', 'ink'];

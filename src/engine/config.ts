@@ -148,6 +148,26 @@ export const MATERIALS: MaterialInfo[] = [
     help: 'Hover to grow frost · Click to freeze · Hold to melt',
     touchHelp: 'Touch to grow frost · Tap to freeze · Hold to melt',
   },
+  {
+    id: 'kaleido', label: 'Kaleido', note: 'Mirrors all around',
+    help: 'Hover to move the mirrors · Click to add mirrors · Hold to turn',
+    touchHelp: 'Touch to move the mirrors · Tap to add mirrors · Hold to turn',
+  },
+  {
+    id: 'origami', label: 'Origami', note: 'Folds and crumples',
+    help: 'Hover to fold · Click to flap · Hold to crumple',
+    touchHelp: 'Touch to fold · Tap to flap · Hold to crumple',
+  },
+  {
+    id: 'mirage', label: 'Mirage', note: 'Heat haze and reflection',
+    help: 'Hover to heat · Click for a heat wave · Hold to blaze',
+    touchHelp: 'Touch to heat · Tap for a heat wave · Hold to blaze',
+  },
+  {
+    id: 'bubble', label: 'Bubble', note: 'Floating in soap bubbles',
+    help: 'Hover to wobble · Click to pop · Hold to blow bubbles',
+    touchHelp: 'Touch to wobble · Tap to pop · Hold to blow bubbles',
+  },
 ];
 
 /** The four elements of the Elements material, each with its own gestures. */
@@ -176,6 +196,10 @@ export const TUNES: Record<MaterialId, { label: string; hint: string }> = {
   echo: { label: 'Trail', hint: 'How long the echoes last' },
   ferro: { label: 'Spikes', hint: 'How tall the spikes grow' },
   ice: { label: 'Cold', hint: 'How fast the frost grows' },
+  kaleido: { label: 'Mirrors', hint: 'How many reflections' },
+  origami: { label: 'Fold', hint: 'How far the paper folds' },
+  mirage: { label: 'Heat', hint: 'How strongly the air shimmers' },
+  bubble: { label: 'Size', hint: 'How big the bubbles are' },
 };
 
 export const SUGGESTIONS = ['hello', 'jelly', 'bloom', 'float', 'chaos'];
@@ -222,4 +246,12 @@ export const PRESETS: { word: string; material: MaterialId; palette: string }[] 
   { word: 'metal', material: 'ferro', palette: 'night' },
   { word: 'frost', material: 'ice', palette: 'ocean' },
   { word: 'winter', material: 'ice', palette: 'midnight' },
+  { word: 'mirror', material: 'kaleido', palette: 'plum' },
+  { word: 'prism', material: 'kaleido', palette: 'aurora' },
+  { word: 'paper', material: 'origami', palette: 'paper' },
+  { word: 'fold', material: 'origami', palette: 'peach' },
+  { word: 'desert', material: 'mirage', palette: 'sunset' },
+  { word: 'heat', material: 'mirage', palette: 'embers' },
+  { word: 'bubble', material: 'bubble', palette: 'candy' },
+  { word: 'soap', material: 'bubble', palette: 'ocean' },
 ];

@@ -2,7 +2,7 @@
 
 A playground for words. Type a word, pick a material, and touch the letters.
 
-Sixteen materials, each with its own physics, cursor and sound:
+Twenty materials, each with its own physics, cursor and sound:
 
 | Material | Hover | Click | Drag |
 | --- | --- | --- | --- |
@@ -21,6 +21,10 @@ Sixteen materials, each with its own physics, cursor and sound:
 | Echo | letters smear, leaving tinted echoes | a strobe throws off copies | letters split into orbiting ghosts |
 | Ferrofluid | spikes rise from the edges toward the pointer | every edge bristles | the liquid is pulled toward the hand |
 | Ice | frost grows in branching crystals | freezes letters solid | melts the frost, which drips, and refreezes on release |
+| Kaleido | moves the centre of the mirrors | adds mirrors | turns the kaleidoscope |
+| Origami | the half facing the pointer folds up | letters flap over, one after another | crumples the letters into facets |
+| Mirage | heats the air: the word shimmers over its reflection | a heat wave rolls along the word | the letters blaze and rise |
+| Bubble | bubbles wobble and drift away | pops a bubble into droplets | blows a stream of bubbles |
 | Gravity | the pointer is a ball that shoves letters | flips gravity (on a letter: kicks it) | pick a letter up and throw it |
 
 ## Run it
@@ -66,7 +70,7 @@ src/
     stage.ts              the single requestAnimationFrame loop, pointer input, the "world"
     layout.ts             word sizing, kerned glyph positions, glyph alpha masks + outline points
     simulation.ts         damped springs per letter (position, rotation, scale, skew), delta time
-    materials/            jelly, balloon, magnet, bloom, float, wave, gravity, explode, sand, melt, blackhole, elements, focus, echo, ferro, ice — one behaviour each (gravity runs its own rigid-body step)
+    materials/            jelly, balloon, magnet, bloom, float, wave, gravity, explode, sand, melt, blackhole, elements, focus, echo, ferro, ice, kaleido, origami, mirage, bubble — one behaviour each (gravity runs its own rigid-body step)
     plants.ts             Bloom's vector garden, anchored to glyph silhouettes
     effects.ts            rings, pulses, gusts, bursts
     cursor.ts             the four drawn cursors
